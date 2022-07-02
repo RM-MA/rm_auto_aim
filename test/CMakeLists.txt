@@ -15,9 +15,16 @@ message("Eigen: Version=${Eigen3_VERSION}")
 message("OpenCV: Version=${OpenCV_VERSION}")
 message("end-----------------------------")
 
+
+add_subdirectory(utils)
+link_directories(utils)
+
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 add_executable(fmt_test fmt_test.cpp)
+
+
+
 
 target_link_libraries(fmt_test 
 ${OpenCV_LIBS}

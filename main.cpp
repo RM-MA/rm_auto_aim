@@ -6,9 +6,9 @@
 #include <string>
 
 #include "opencv2/opencv.hpp"
+#include "utils/logger/logger.hpp"
 
 bool main_loop_condition = true;  //主循环的条件
-
 class test {
 public:
     test(const std::string& s_) : s(s_) {}
@@ -31,9 +31,14 @@ int main(int argc, char** argv) {
     test s{"a"};
     signal(SIGINT, signalHandler);
 
+    int i = 1;
+    logger::logger my_logger{"i={}, j={}\n", logger::LOGGER_TYPE::ALL, "test.csv", false, ""};
+    my_logger.ok();
     while (main_loop_condition) {
-        Print("1", 2);
+        my_logger.write(i, i*2.1);
+        // Print("1", 2);
         sleep(1);
     }
+    my_logger.close();
     return 0;
 }

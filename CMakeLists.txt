@@ -13,12 +13,22 @@ find_package(Eigen3 REQUIRED)
 message("init----------------------------")
 message("Eigen: Version=${Eigen3_VERSION}")
 message("OpenCV: Version=${OpenCV_VERSION}")
+message("${PROJECT_SOURCE_DIR}")
 message("end-----------------------------")
+
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
+
+
+
 add_executable(main main.cpp)
 
-target_link_libraries(main 
+target_link_libraries(main
 ${OpenCV_LIBS}
-fmt::fmt)
+fmt::fmt
+)
+
+include_directories(utils)
+add_subdirectory(utils)
+target_link_libraries(main utils)
