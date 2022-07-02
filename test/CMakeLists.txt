@@ -17,8 +17,8 @@ message("end-----------------------------")
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
-add_executable(main main.cpp)
+add_executable(fmt_test fmt_test.cpp)
 
-target_link_libraries(main 
+target_link_libraries(fmt_test 
 ${OpenCV_LIBS}
 fmt::fmt)
