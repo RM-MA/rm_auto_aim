@@ -3,7 +3,7 @@
 # command: clang-format -i --style=file <file>
 
 Language: Cpp
-BasedOnStyle: Google
+BasedOnStyle: Microsoft
 ColumnLimit: 200
 
 IndentPPDirectives: AfterHash
@@ -13,6 +13,27 @@ AccessModifierOffset: -4
 TabWidth:        4
 ObjCBlockIndentWidth: 4
 IndentWidth:     4
+
+# 切勿将块合并为一行
+AllowShortBlocksOnASingleLine: Never
+
+AllowShortFunctionsOnASingleLine: None
+
+# struct foo {
+# private:
+#   int i;
+
+# protected:
+#   int j;
+#   /* comment */
+# public:
+#   foo() {}
+
+# private:
+# protected:
+# };
+# 仅当访问修饰符开始新的逻辑块时才添加空行
+# EmptyLineBeforeAccessModifierStyle: LogicalBlock clang-format 12
 
 AlwaysBreakTemplateDeclarations: false
 
@@ -79,7 +100,7 @@ AlwaysBreakBeforeMultilineStrings: false
 #     aaaaaaaaaaaaaaaaaaaa,
 #     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
 # }
-BinPackArguments: false
+BinPackArguments: true
 
 # true:
 # void f(int aaaaaaaaaaaaaaaaaaaa, int aaaaaaaaaaaaaaaaaaaa,
@@ -89,7 +110,7 @@ BinPackArguments: false
 # void f(int aaaaaaaaaaaaaaaaaaaa,
 #        int aaaaaaaaaaaaaaaaaaaa,
 #        int aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa) {}
-BinPackParameters: false
+BinPackParameters: true
 
 # LooooooooooongType loooooooooooooooooooooongVariable =
 #     someLooooooooooooooooongFunction();
@@ -150,7 +171,7 @@ IncludeBlocks: Regroup
 # #    include <foo>
 # #  endif
 # #endif
-IndentPPDirectives: AfterHash
+# IndentPPDirectives: AfterHash
 
 # true:
 # LoooooooooooooooooooooooooooooooooooooooongReturnType
@@ -170,4 +191,4 @@ IndentWrappedFunctionNames: true
 # // information
 # /* second veryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongComment with plenty of
 #  * information */
-ReflowComments: false
+ReflowComments: true
