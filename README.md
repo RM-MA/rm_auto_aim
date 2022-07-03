@@ -20,4 +20,4 @@
 1. record -- 录制
 2. FPS -- 计算FPS，显示到图片上
 3. logger -- 日志输出类
-4. config -- 配置参数类
+4. config -- 配置参数类, 打算删除

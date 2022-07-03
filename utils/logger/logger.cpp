@@ -1,18 +1,20 @@
 #include "logger.hpp"
 
+#include <bits/types/FILE.h>
+#include <fcntl.h>
 #include <fmt/color.h>
 #include <fmt/core.h>
 #include <fmt/os.h>
-
-logger::logger::logger(const std::string& fmt_, const LOGGER_TYPE& type_, const std::string& path_, bool addTimestamp_, const std::string& description_)
-    : fmt(fmt_), type(type_), path(path_), output_file(fmt::output_file(path_)), add_timestamp(addTimestamp_), description(description_) {
+/*
+logger::logger::logger(const std::string& fmt_, const LOGGER_TYPE& type_, const std::string& path_, bool addTimestamp_, const std::string& description_, int oflag = O_WRONLY | O_CREAT)
+    {
     // auto temp = fmt::output_file(path);
     if (add_timestamp) {
         fmt = "{}, " + fmt;
     }
     // output_file = fmt::ostream(temp);
 }
-
+*/
 bool logger::logger::ok() { return true; }
 /*
 template <typename... T> 
@@ -57,5 +59,5 @@ logger::logger::~logger() {
         close();
     }
     fmt::print(fg(fmt::color::red), "logger 已释放, 文件存放: ");
-    fmt::print(fg(fmt::color::blue) | fmt::emphasis::underline, "{}\n", path);
+    fmt::print(fmt::emphasis::underline, "{}\n", path);
 }

@@ -24,7 +24,12 @@ enum class LOGGER_TYPE : std::uint8_t { WRITE, ALL };
  */
 class logger {
 public:
-    logger(const std::string& fmt, const LOGGER_TYPE& type, const std::string& path, bool addTimestamp, const std::string& description);
+    logger(const std::string& fmt_, const LOGGER_TYPE& type_, const std::string& path_, bool addTimestamp = true, const std::string& description_ = "", int oflag = O_WRONLY | O_CREAT)
+        : fmt(fmt_), type(type_), path(path_), output_file(fmt::output_file(path_, oflag)), add_timestamp(addTimestamp), description(description_) {
+        if (add_timestamp) {
+            fmt = "{}, " + fmt;
+        }
+    }
 
     bool ok();
 
