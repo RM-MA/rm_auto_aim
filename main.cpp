@@ -3,10 +3,14 @@
 
 #include <csignal> //信号处理
 #include <fcntl.h>
+#include <unistd.h> //信号处理
+
+#include "devices/camera/mv_camera.hpp"
+
 #include <fmt/color.h>
 #include <fmt/core.h>
+
 #include <string>
-#include <unistd.h> //信号处理
 
 bool main_loop_condition = true; //主循环的条件
 
@@ -39,18 +43,28 @@ template <typename... T> void Print(T &&... args)
 
 int main(int argc, char **argv)
 {
-    test s{"a"};
     signal(SIGINT, signalHandler);
 
-    int            i = 1;
-    logger::logger my_logger{"i={}, j={}\n", logger::LOGGER_TYPE::ALL, "test.csv", true, "", O_WRONLY | O_APPEND};
-    my_logger.ok();
+    test s{"a"};
+    int  i = 1;
+
+    logger::logger my_logger{"i={}, j={:.3f},{:.3f},{}\n", 
+    logger::LOGGER_TYPE::ALL, PROJECT_DIR "/test.csv", true, "", O_WRONLY | O_CREAT | O_APPEND};
+
+    devices::MV_Camera mv_camera{PROJECT_DIR "/configs/camera/MV-SUA133GC-T_042003320218.Config"};
+
+    mv_camera.open();
+
+    cv::Mat img;
+    double  timestamp_ms; //单位0.1毫秒
+
     while (main_loop_condition)
     {
-        my_logger.write(i, i * 2.1);
+        mv_camera.read(img, timestamp_ms);
+        my_logger.write(i, i * 2.1, timestamp_ms, PROJECT_DIR);
         // Print("1", 2);
         i++;
-        sleep(1);
+        // sleep(1);
     }
     my_logger.close();
     return 0;

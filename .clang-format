@@ -164,7 +164,7 @@ FixNamespaceComments: true
 #                                         #include "b.h"
 # #include <lib/main.h>
 # #include "a.h"                          #include <lib/main.h>
-IncludeBlocks: Regroup
+IncludeBlocks: Preserve # Regroup
 
 # #if FOO
 # #  if BAR

@@ -7,7 +7,10 @@
 
 #include <csignal>
 #include <cstdint>
+
 #include <ctime>
+#include <chrono>
+
 #include <ostream>
 #include <string>
 
@@ -46,7 +49,7 @@ public:
         }
         case LOGGER_TYPE::ALL: {
             if (add_timestamp) {
-                std::time_t t = std::time(nullptr);
+                std::time_t t = std::time(nullptr);   
                 output_file.print(fmt, t, args...);
                 fmt::print(fmt, t, args...);
             } else {

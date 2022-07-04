@@ -20,7 +20,8 @@ message("end-----------------------------")
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-
+# PROJECT_DIR这个量，就可以在代码中使用
+add_compile_definitions(PROJECT_DIR="${PROJECT_SOURCE_DIR}")
 
 add_executable(main main.cpp)
 
@@ -32,3 +33,8 @@ fmt::fmt
 include_directories(utils)
 add_subdirectory(utils)
 target_link_libraries(main utils)
+
+
+include_directories(devices)
+add_subdirectory(devices)
+target_link_libraries(main devices)

@@ -8,13 +8,14 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/opencv.hpp"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     std::string     path = "test.yml";
     cv::FileStorage a("./test.yaml", cv::FileStorage::READ);
 
-    bool     record;
-    cv::Size s;
-    cv::Mat  mat;
+    bool        record;
+    cv::Size    s;
+    cv::Mat     mat;
     std::string name;
 
     a["Record"] >> record;
