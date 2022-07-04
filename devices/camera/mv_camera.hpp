@@ -39,7 +39,9 @@ public:
 
     bool set_exposure_us(double us) const;
 
-    ~MV_Camera();
+    ~MV_Camera(){
+        fmt::print(fg(fmt::color::red) | fmt::emphasis::bold, "相机已释放！");
+    };
 
     MV_Camera(MV_Camera const &) = delete;
     MV_Camera &operator=(MV_Camera const &) = delete;

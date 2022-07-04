@@ -168,8 +168,8 @@ bool MV_Camera::read(cv::Mat &img, double &timestamp_ms) const
     MV_CHECK_API_ERROR(CameraGetImageBuffer(handle, &head, &buffer, 10000), "");
     img = cv::Mat(head.iHeight, head.iWidth, CV_8UC3);
     MV_CHECK_API_ERROR(CameraImageProcess(handle, buffer, img.data, &head), "");
-    // timestamp_ms = head.uiTimeStamp;//uiTimeStamp 该帧的采集时间，单位0.1毫秒
-    timestamp_ms = head.uiExpTime;//当前图像的曝光值，单位为微秒us
+    timestamp_ms = head.uiTimeStamp;//uiTimeStamp 该帧的采集时间，单位0.1毫秒
+    // timestamp_ms = head.uiExpTime;//当前图像的曝光值，单位为微秒us
     MV_CHECK_API_ERROR(CameraReleaseImageBuffer(handle, buffer), "");
     return true;
 }
