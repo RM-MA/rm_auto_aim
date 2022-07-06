@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 project(ma)
 set(CMAKE_CXX_STANDAND 17)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # clangd
 
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
@@ -16,13 +16,13 @@ message("OpenCV: Version=${OpenCV_VERSION}")
 message("end-----------------------------")
 
 
-
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 add_executable(fmt_test fmt_test.cpp)
 
 add_executable(configs_test configs_test.cpp)
 
+add_executable(serial_test serial_test.cpp)
 
 target_link_libraries(fmt_test 
 ${OpenCV_LIBS}

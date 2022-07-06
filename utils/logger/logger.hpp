@@ -1,6 +1,7 @@
 #ifndef _LOGGER_HPP_
 #define _LOGGER_HPP_
 
+#include <bits/types/struct_timeval.h>
 #include <fmt/color.h>
 #include <fmt/core.h>
 #include <fmt/os.h>
@@ -8,14 +9,15 @@
 #include <csignal>
 #include <cstdint>
 
-#include <ctime>
 #include <chrono>
+#include <ctime>
+#include "sys/time.h"
 
 #include <ostream>
 #include <string>
 
-namespace logger {
-
+namespace logger
+{
 enum class LOGGER_TYPE : std::uint8_t { WRITE, ALL };
 
 /**
@@ -25,10 +27,20 @@ enum class LOGGER_TYPE : std::uint8_t { WRITE, ALL };
  * @param path 文件保存路径
  * @param addTimestamp 是否添加时间戳
  */
-class logger {
+class logger
+{
 public:
-    logger(const std::string& fmt_, const LOGGER_TYPE& type_, const std::string& path_, bool addTimestamp = true, const std::string& description_ = "", int oflag = O_WRONLY | O_CREAT)
-        : fmt(fmt_), type(type_), path(path_), output_file(fmt::output_file(path_, oflag)), add_timestamp(addTimestamp), description(description_) {
+    logger(
+        const std::string & fmt_, const LOGGER_TYPE & type_, const std::string & path_,
+        bool addTimestamp = true, const std::string & description_ = "",
+        int oflag = O_WRONLY | O_CREAT)
+    : fmt(fmt_),
+      type(type_),
+      path(path_),
+      output_file(fmt::output_file(path_, oflag)),
+      add_timestamp(addTimestamp),
+      description(description_)
+    {
         if (add_timestamp) {
             fmt = "{}, " + fmt;
         }
@@ -36,12 +48,16 @@ public:
 
     bool ok();
 
-    template <typename... T> bool write(T&&... args) {
+    template <typename... T> bool write(T &&... args)
+    {
         switch (type) {
         case LOGGER_TYPE::WRITE: {
             if (add_timestamp) {
-                std::time_t t = std::time(nullptr);
-                output_file.print(fmt, t, args...);
+                // struct timeval tv;
+                gettimeofday(&tv, nullptr);
+                // std::time_t second = std::time(nullptr);
+                double sencond = tv.tv_sec + tv.tv_usec / 1e6;
+                output_file.print(fmt, sencond, args...);
             } else {
                 output_file.print(fmt, args...);
             }
@@ -49,9 +65,12 @@ public:
         }
         case LOGGER_TYPE::ALL: {
             if (add_timestamp) {
-                std::time_t t = std::time(nullptr);   
-                output_file.print(fmt, t, args...);
-                fmt::print(fmt, t, args...);
+                // struct timezone tv;
+                gettimeofday(&tv, nullptr);  //获取时间戳
+                // std::time_t second = std::time(nullptr);
+                double sencond = tv.tv_sec + tv.tv_usec / 1e6;
+                fmt::print(fmt, sencond, args...);
+                output_file.print(fmt, sencond, args...);
             } else {
                 output_file.print(fmt, args...);
                 fmt::print(fmt, args...);
@@ -71,12 +90,13 @@ public:
 
     ~logger();
 
-    logger(logger const&) = delete;
-    logger& operator=(logger const&) = delete;
+    logger(logger const &) = delete;
+    logger & operator=(logger const &) = delete;
 
 private:
     bool is_success;
     bool add_timestamp;
+    struct timeval tv;
 
     LOGGER_TYPE type;
 
