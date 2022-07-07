@@ -54,9 +54,9 @@ public:
         case LOGGER_TYPE::WRITE: {
             if (add_timestamp) {
                 // struct timeval tv;
-                gettimeofday(&tv, nullptr);
+                clock_gettime(CLOCK_REALTIME, &tv);
                 // std::time_t second = std::time(nullptr);
-                double sencond = tv.tv_sec + tv.tv_usec / 1e6;
+                double sencond = tv.tv_sec + tv.tv_nsec / 1e9;
                 output_file.print(fmt, sencond, args...);
             } else {
                 output_file.print(fmt, args...);
@@ -66,9 +66,9 @@ public:
         case LOGGER_TYPE::ALL: {
             if (add_timestamp) {
                 // struct timezone tv;
-                gettimeofday(&tv, nullptr);  //获取时间戳
+                clock_gettime(CLOCK_REALTIME, &tv);  //获取时间戳
                 // std::time_t second = std::time(nullptr);
-                double sencond = tv.tv_sec + tv.tv_usec / 1e6;
+                double sencond = tv.tv_sec + tv.tv_nsec / 1e9;
                 fmt::print(fmt, sencond, args...);
                 output_file.print(fmt, sencond, args...);
             } else {
@@ -96,7 +96,7 @@ public:
 private:
     bool is_success;
     bool add_timestamp;
-    struct timeval tv;
+    struct timespec tv;  //时间戳
 
     LOGGER_TYPE type;
 

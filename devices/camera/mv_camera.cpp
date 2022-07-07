@@ -3,7 +3,7 @@
 #include "camera/MVSDK/CameraApi.h"
 #include "camera/MVSDK/CameraDefine.h"
 
-namespace devices
+namespace Devices
 {
 // Assert
 #define MV_ASSERT_WARNING(expr, info, ...)                                                 \
@@ -186,7 +186,7 @@ bool MV_Camera::read(cv::Mat & img) const
     tSdkFrameHead head;
     BYTE * buffer;
     // 100 为超时时间
-    MV_CHECK_API_ERROR(CameraGetImageBuffer(handle, &head, &buffer, 100), "");
+    MV_CHECK_API_ERROR(CameraGetImageBuffer(handle, &head, &buffer, 1000), "");
     img = cv::Mat(head.iHeight, head.iWidth, CV_8UC3);
     MV_CHECK_API_ERROR(CameraImageProcess(handle, buffer, img.data, &head), "");
     MV_CHECK_API_ERROR(CameraReleaseImageBuffer(handle, buffer), "");
@@ -202,7 +202,7 @@ bool MV_Camera::read(cv::Mat & img, double & timestamp_ms) const
     tSdkFrameHead head;
     BYTE * buffer;
     // 100 为超时时间
-    MV_CHECK_API_ERROR(CameraGetImageBuffer(handle, &head, &buffer, 100), "");
+    MV_CHECK_API_ERROR(CameraGetImageBuffer(handle, &head, &buffer, 1000), "");
     // fmt::print(fg(fmt::color::green), "[{}, {}]", head.iHeight, head.iWidth);
     img = cv::Mat(head.iHeight, head.iWidth, CV_8UC3);
     MV_CHECK_API_ERROR(CameraImageProcess(handle, buffer, img.data, &head), "");

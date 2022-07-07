@@ -28,14 +28,17 @@ add_compile_definitions(PROJECT_DIR="${PROJECT_SOURCE_DIR}")
 add_executable(main main.cpp)
 
 target_link_libraries(main
-${OpenCV_LIBS}
-fmt::fmt
+    ${OpenCV_LIBS}
+    fmt::fmt
 )
 
 include_directories(utils)
 add_subdirectory(utils)
 target_link_libraries(main utils)
 
+include_directories(modules)
+add_subdirectory(modules)
+target_link_libraries(main modules)
 
 include_directories(devices)
 add_subdirectory(devices)

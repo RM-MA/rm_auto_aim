@@ -9,7 +9,7 @@
 
 #include "MVSDK/CameraApi.h"
 
-namespace devices
+namespace Devices
 {
 
 class mv_Frame_Error : std::runtime_error
@@ -62,6 +62,6 @@ private:
 
 }; // class mv_camera
 
-} // namespace devices
+} // namespace Devices
 
 #endif /*_MV_CAMERA_HPP_*/

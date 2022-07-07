@@ -2,7 +2,7 @@
 ```bash
 ├── build			-- build
 ├── CMakeLists.txt	-- CMake
-├── configs			-- 配置文件存放处
+├── Configs			-- 配置文件存放处
 ├── devices			-- 处理设备的代码，如相机、串口
 ├── main.cpp		-- 主文件入口
 ├── README.md		-- README.md

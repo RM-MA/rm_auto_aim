@@ -1,0 +1,8 @@
+%YAML:1.0
+---
+Small_armour:
+  width: 12
+  height: 10
+Big_armour:
+  width: 16
+  height: 5
