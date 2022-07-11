@@ -10,8 +10,10 @@
 #include <ctime>
 //自
 #include "devices/camera/mv_camera.hpp"
+#include "modules/detect_armour/detect.hpp"
 #include "utils/logger/logger.hpp"
 #include "utils/robot.hpp"
+
 //fmt
 #include <fmt/color.h>
 #include <fmt/core.h>
@@ -107,7 +109,8 @@ void camera_thread(
         //     std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
         // fmt::print("[相机读取] 每次花费时间: {}\n", wasteTime);
         //动量更新
-        temp_time = (tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_nsec - tv_start.tv_nsec) / 1e9;//s
+        temp_time =
+            (tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_nsec - tv_start.tv_nsec) / 1e9;  //s
         this_time = a * this_time + (1 - a) * temp_time;
         //"适当地"休眠一段时间
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -133,6 +136,8 @@ int main(int argc, char ** argv)
     logger::logger my_logger{
         "i={}, j={},{:.3f}\n",        logger::LOGGER_TYPE::ALL, PROJECT_DIR "/test.csv", true, "",
         O_WRONLY | O_CREAT | O_APPEND};
+
+    Modules::Detect detector{};
 
     int frame = 1;  //主线程的帧数
 
@@ -161,10 +166,18 @@ int main(int argc, char ** argv)
                 copyImg = img.clone();
             }
             cv::imshow("原图", copyImg);
+            Robot::Detection_pack detection_pack;
+            detection_pack.img = copyImg;
+            detection_pack.timestamp = tv_start.tv_sec + tv_start.tv_nsec / 1e9;
+            detector.detect(detection_pack);
             // my_logger.write(img.rows, img.cols, timestamp_ms);
             // auto img_path = fmt::format(PROJECT_DIR"/datas/{}.jpg", frame);
             // cv::imwrite(img_path, copyImg);
-            cv::waitKey(1);
+            //退出
+            int k = cv::waitKey(1);
+            if (k == 27) {
+                main_loop_condition = false;
+            }
         } else {  //相机线程未开始
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             fmt::print(fg(fmt::color::red), "[WARN] 未开始！");

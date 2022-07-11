@@ -19,22 +19,24 @@ enum class EnemyColor  //敌方颜色
 
 struct Light
 {
+    cv::Point2f pts[4];
 };
 
 struct Armour
 {
-    Light &ll, lr;      //左右灯条
-    RobotType type;     //机器人类型
-    cv::Point3f * cps;  //Camera Points, 相机坐标系
-    cv::Point3f * wps;  //World Points, 世界坐标系
+    Light ll, lr;    //左右灯条
+    RobotType type;   //机器人类型
+    cv::Point3f cps;  //Camera Points, 相机坐标系
+    cv::Point3f wps;  //World Points, 世界坐标系
+
 };
 
-struct Detection_pack  //打包数据结构
+struct Detection_pack  //每帧的打包数据结构
 {
-    cv::Mat img;     //图像
+    cv::Mat img;       //图像
     double timestamp;  //时间戳
     // cv::Point2f * pts; //
-    Armour * armours;
+    std::vector<Armour> armours;  //装甲板
 };
 
 enum class ShootLevel { Level1, Level2, Level3 };
