@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <opencv2/core/types.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
 namespace Robot
@@ -100,6 +101,30 @@ struct Detection_pack  //每帧的打包数据结构
 };
 
 enum class ShootLevel { Level1, Level2, Level3 };
+
+bool drawArmour(const Armour & armour, cv::Mat & drawImg, const Color& color)
+{
+    cv::Scalar paint;
+    if(color == Color::RED){
+        paint = cv::Scalar(0, 0, 255);
+    }else{
+        paint = cv::Scalar(255, 0, 0);
+    }
+    cv::line(drawImg, armour.left_light.top, armour.right_light.top, paint);
+    cv::line(drawImg, armour.right_light.top, armour.right_light.bottom, paint);
+    cv::line(drawImg, armour.left_light.bottom, armour.right_light.bottom, paint);
+    cv::line(drawImg, armour.left_light.top, armour.left_light.bottom, paint);
+
+    return true;
+}
+
+bool drawArmours(const std::vector<Armour> & armours, cv::Mat & drawImg, const Color& color)
+{
+    for (auto armour : armours) {
+        drawArmour(armour, drawImg, color);
+    }
+    return true;
+}
 
 }  // namespace Robot
 

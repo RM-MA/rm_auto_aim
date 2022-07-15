@@ -133,11 +133,13 @@ int main(int argc, char ** argv)
     bool camera_start = false;
     std::mutex img_mutex;
 
+    Robot::Color color = Robot::Color::RED;
+
     logger::logger my_logger{
         "i={}, j={},{:.3f}\n",        logger::LOGGER_TYPE::ALL, PROJECT_DIR "/test.csv", true, "",
         O_WRONLY | O_CREAT | O_APPEND};
 
-    Modules::Detect detector{Robot::Color::RED};
+    Modules::Detect detector{color};
 
     int frame = 1;  //主线程的帧数
 
@@ -165,15 +167,14 @@ int main(int argc, char ** argv)
                 std::lock_guard<std::mutex> l(img_mutex);
                 copyImg = img.clone();
             }
-            cv::imshow("原图", copyImg);
             Robot::Detection_pack detection_pack;
-            detection_pack.img = copyImg;
+            detection_pack.img       = copyImg;
             detection_pack.timestamp = tv_start.tv_sec + tv_start.tv_nsec / 1e9;
             detector.detect(detection_pack);
-            // my_logger.write(img.rows, img.cols, timestamp_ms);
-            // auto img_path = fmt::format(PROJECT_DIR"/datas/{}.jpg", frame);
-            // cv::imwrite(img_path, copyImg);
-            //退出
+
+            cv::imshow("原图", copyImg);
+            Robot::drawArmours(detection_pack.armours, copyImg, color);
+            cv::imshow("after draw", copyImg);
             int k = cv::waitKey(1);
             if (k == 27) {
                 main_loop_condition = false;
@@ -190,6 +191,13 @@ int main(int argc, char ** argv)
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     my_logger.close();
+
+    if (cameraThread.joinable()) {
+        cameraThread.join();
+    } else {
+        fmt::print("camera thread can't join");
+    }
+
     while (!camera_start)  //当其他线程都释放完后，退出主线程
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));

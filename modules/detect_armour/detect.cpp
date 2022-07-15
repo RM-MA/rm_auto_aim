@@ -74,7 +74,7 @@ bool Detect::process(cv::Mat & img, cv::Mat & processImage)
 }
 
 bool Detect::match_Lights(
-    const cv::Mat & rbg_img, const cv::Mat & binary_img, std::vector<Robot::Light> & lights)
+    const cv::Mat & bgr_img, const cv::Mat & binary_img, std::vector<Robot::Light> & lights)
 {
     //寻找轮廓
     std::vector<std::vector<cv::Point>> contours;
@@ -95,11 +95,11 @@ bool Detect::match_Lights(
         //选出ROI
         auto rect = light.boundingRect();  //rect.x, rect.y为左上点
         //防止ROI超出图片边界
-        if (!(rect.x >= 0 && rect.width >= 0 && rect.x + rect.width <= rbg_img.cols &&
-              rect.y >= 0 && rect.height >= 0 && rect.y + rect.y <= rbg_img.rows)) {
+        if (!(rect.x >= 0 && rect.width >= 0 && rect.x + rect.width <= bgr_img.cols &&
+              rect.y >= 0 && rect.height >= 0 && rect.y + rect.y <= bgr_img.rows)) {
             continue;
         }
-        auto roi = rbg_img(rect);
+        auto roi = bgr_img(rect);
         //根据ROI内r、b的像素点数量 判断灯条颜色
         int sum_r = 0, sum_b = 0;
         for (int i = 0; i < roi.cols; i++) {
@@ -107,8 +107,8 @@ bool Detect::match_Lights(
                 //测试是否在轮廓内
                 if (cv::pointPolygonTest(contour, cv::Point2f(i + rect.x, j + rect.y), false) >=
                     0) {
-                    sum_r += roi.at<cv::Vec3b>(i, j)[0];
-                    sum_b += roi.at<cv::Vec3b>(i, j)[2];
+                    sum_r += roi.at<cv::Vec3b>(i, j)[2];
+                    sum_b += roi.at<cv::Vec3b>(i, j)[0];
                 }
             }
         }
