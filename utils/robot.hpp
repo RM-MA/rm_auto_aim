@@ -102,7 +102,7 @@ struct Detection_pack  //每帧的打包数据结构
 
 enum class ShootLevel { Level1, Level2, Level3 };
 
-bool drawArmour(const Armour & armour, cv::Mat & drawImg, const Color& color)
+inline bool drawArmour(const Armour & armour, cv::Mat & drawImg, const Color& color)
 {
     cv::Scalar paint;
     if(color == Color::RED){
@@ -118,7 +118,7 @@ bool drawArmour(const Armour & armour, cv::Mat & drawImg, const Color& color)
     return true;
 }
 
-bool drawArmours(const std::vector<Armour> & armours, cv::Mat & drawImg, const Color& color)
+inline bool drawArmours(const std::vector<Armour> & armours, cv::Mat & drawImg, const Color& color)
 {
     for (auto armour : armours) {
         drawArmour(armour, drawImg, color);
