@@ -3,3 +3,16 @@
 Thresholds:
   lowerb: [ 0., 0., 0., 0. ]
   upperb: [ 255., 255., 255., 0. ]
+
+light:
+  max_angle: 40.0
+  max_ratio: 0.4
+  min_ratio: 0.1
+
+armour:
+  max_angle: 35.0
+  min_light_ratio: 0.6
+  max_large_center_distance: 5.0
+  min_large_center_distance: 3.2
+  max_small_center_distance: 3.2
+  min_small_center_distance: 0.8

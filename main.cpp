@@ -137,7 +137,7 @@ int main(int argc, char ** argv)
         "i={}, j={},{:.3f}\n",        logger::LOGGER_TYPE::ALL, PROJECT_DIR "/test.csv", true, "",
         O_WRONLY | O_CREAT | O_APPEND};
 
-    Modules::Detect detector{};
+    Modules::Detect detector{Robot::Color::RED};
 
     int frame = 1;  //主线程的帧数
 

@@ -12,7 +12,7 @@ namespace Modules
 class Detect
 {
 public:
-    Detect();
+    Detect(const Robot::Color & color);
     ~Detect();
     bool detect(Robot::Detection_pack &);
 
@@ -20,14 +20,24 @@ public:
     Detect & operator=(Detect const &) = delete;
 
 private:
-    bool process(cv::Mat&, cv::Mat&);
+    bool process(cv::Mat &, cv::Mat &);
 
-    bool match_Lights(cv::Mat &, std::vector<Robot::Light> &);
+    bool match_Lights(const cv::Mat &, const cv::Mat &, std::vector<Robot::Light> &);
 
-    bool match_Armours(std::vector<Robot::Light> &, std::vector<Robot::Armour> &);
+    bool match_Armours(const std::vector<Robot::Light> &, std::vector<Robot::Armour> &);
 
+    bool isLight(const Robot::Light &);
 
-    cv::Scalar lowerb, upperb;//二值化的高低阈值
+    bool containLight(
+        const Robot::Light &, const Robot::Light &, const std::vector<Robot::Light> &);
+
+    bool isArmour(Robot::Armour &);
+
+    const Robot::Color color;//敌方颜色
+
+    cv::Scalar lowerb, upperb;          //二值化的高低阈值
+    Robot::LightParams light_params;    //灯条条件参数
+    Robot::ArmourParams armour_params;  //装甲板条件参数
 };  //Detect
 
 }  // namespace Modules
