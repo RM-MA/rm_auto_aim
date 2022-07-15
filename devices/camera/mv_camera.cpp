@@ -68,7 +68,9 @@ MV_Camera::MV_Camera(const char * camera_cfg) : camera_cfg(camera_cfg)
 
 MV_Camera::~MV_Camera()
 {
-    close();
+    if (isOpen()) {
+        close();
+    }
     fmt::print(fg(fmt::color::red) | fmt::emphasis::bold, "相机已释放！");
 }
 
@@ -114,7 +116,7 @@ bool MV_Camera::open()
     MV_CHECK_API_WARNING(
         CameraReadParameterFromFile(handle, (char *)camera_cfg.data()),
         "从文件读取相机配置文件错误，路径为: {}", camera_cfg);
-    
+
     // tSdkImageResolution * resolution;
     // MV_CHECK_API_ERROR(CameraGetImageResolution(handle, resolution), "");
     // fmt::print(fg(fmt::color::orange), "{} {}\n", resolution->iHeight, resolution->iWidth);
@@ -133,14 +135,12 @@ bool MV_Camera::open()
     return true;
 }
 
-
 /**
  * @brief 当从文件读取失效后，手动设置。
  * 
  */
 bool MV_Camera::setConfig()
 {
-
     /**
      * @brief 设置相机配置参数
      * 
@@ -226,4 +226,4 @@ bool MV_Camera::set_exposure_us(double us) const
     return true;
 }
 
-}  // namespace devices
+}  // namespace Devices

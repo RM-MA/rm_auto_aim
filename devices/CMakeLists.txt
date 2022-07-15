@@ -6,10 +6,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 
-message("init----------------------------")
-message("OpenCV: Version=${OpenCV_VERSION}")
-message("${PROJECT_SOURCE_DIR}")
-message("end-----------------------------")
 
 aux_source_directory(camera mv_camera_src)
 

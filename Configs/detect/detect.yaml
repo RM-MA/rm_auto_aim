@@ -1,8 +1,8 @@
 %YAML:1.0
 ---
 Thresholds:
-  lowerb: [ 0., 0., 0., 0. ]
-  upperb: [ 255., 255., 255., 0. ]
+  lowerb: [ 0, 0, 186, 0. ]
+  upperb: [ 151, 102, 255, 0. ]
 
 light:
   max_angle: 40.0

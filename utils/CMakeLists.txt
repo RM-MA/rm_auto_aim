@@ -12,8 +12,9 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 aux_source_directory(logger logger_src)
+aux_source_directory(timer timer_src)
 
-add_library(utils SHARED ${logger_src})
+add_library(utils SHARED ${logger_src} ${timer_src})
 
 target_link_libraries(utils
     ${OpenCV_LIBS}

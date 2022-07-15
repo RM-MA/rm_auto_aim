@@ -28,7 +28,7 @@ Detect::Detect(const Robot::Color & color) : color(color)
     file["Thresholds"]["upperb"] >> upperb;
     //灯条匹配条件参数
     file["light"]["min_ratio"] >> light_params.min_ratio;
-    file["light"]["min_ratio"] >> light_params.min_ratio;
+    file["light"]["max_ratio"] >> light_params.max_ratio;
     file["light"]["max_angle"] >> light_params.max_angle;
     //装甲板匹配条件参数
     file["armour"]["max_angle"] >> armour_params.max_angle;

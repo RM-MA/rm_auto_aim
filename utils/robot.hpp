@@ -110,10 +110,10 @@ inline bool drawArmour(const Armour & armour, cv::Mat & drawImg, const Color& co
     }else{
         paint = cv::Scalar(255, 0, 0);
     }
-    cv::line(drawImg, armour.left_light.top, armour.right_light.top, paint);
-    cv::line(drawImg, armour.right_light.top, armour.right_light.bottom, paint);
-    cv::line(drawImg, armour.left_light.bottom, armour.right_light.bottom, paint);
-    cv::line(drawImg, armour.left_light.top, armour.left_light.bottom, paint);
+    cv::line(drawImg, armour.left_light.top, armour.right_light.top, paint, 2);
+    cv::line(drawImg, armour.right_light.top, armour.right_light.bottom, paint, 2);
+    cv::line(drawImg, armour.left_light.bottom, armour.right_light.bottom, paint, 2);
+    cv::line(drawImg, armour.left_light.top, armour.left_light.bottom, paint, 2);
 
     return true;
 }
