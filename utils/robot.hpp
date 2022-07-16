@@ -9,6 +9,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
+#include <fmt/color.h>
+
 namespace Robot
 {
 enum class RobotType {
@@ -87,8 +89,8 @@ struct Armour
     cv::Point2f center;             //中心点
     RobotType type;                 //机器人类型
     ArmourType armour_type;         //装甲板类型
-    cv::Point3f cps;                //Camera Points, 相机坐标系
-    cv::Point3f wps;                //World Points, 世界坐标系
+    cv::Point3d camera_points;      //Camera Points, 相机坐标系
+    cv::Point3d world_points;       //World Points, 世界坐标系
     Color color;                    //装甲板颜色
 };
 
@@ -102,12 +104,12 @@ struct Detection_pack  //每帧的打包数据结构
 
 enum class ShootLevel { Level1, Level2, Level3 };
 
-inline bool drawArmour(const Armour & armour, cv::Mat & drawImg, const Color& color)
+inline bool drawArmour(const Armour & armour, cv::Mat & drawImg, const Color & color)
 {
     cv::Scalar paint;
-    if(color == Color::RED){
+    if (color == Color::RED) {
         paint = cv::Scalar(0, 0, 255);
-    }else{
+    } else {
         paint = cv::Scalar(255, 0, 0);
     }
     cv::line(drawImg, armour.left_light.top, armour.right_light.top, paint, 2);
@@ -118,13 +120,14 @@ inline bool drawArmour(const Armour & armour, cv::Mat & drawImg, const Color& co
     return true;
 }
 
-inline bool drawArmours(const std::vector<Armour> & armours, cv::Mat & drawImg, const Color& color)
+inline bool drawArmours(const std::vector<Armour> & armours, cv::Mat & drawImg, const Color & color)
 {
     for (auto armour : armours) {
         drawArmour(armour, drawImg, color);
     }
     return true;
 }
+
 
 }  // namespace Robot
 

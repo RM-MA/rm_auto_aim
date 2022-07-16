@@ -168,7 +168,7 @@ bool MV_Camera::setConfig()
 
 bool MV_Camera::close()
 {
-    MV_ASSERT_WARNING(handle >= 0, "相机已经关闭！");  //
+    MV_ASSERT_WARNING(handle >= 0, "相机已经关闭！\n");  //
     if (handle < 0) return true;
     MV_CHECK_API_ERROR(CameraUnInit(handle), "");
     handle = -1;

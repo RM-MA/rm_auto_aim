@@ -11,6 +11,7 @@
 //自
 #include "devices/camera/mv_camera.hpp"
 #include "modules/detect_armour/detect.hpp"
+#include "modules/posture_calculating/posture_calculating.hpp"
 #include "utils/logger/logger.hpp"
 #include "utils/robot.hpp"
 #include "utils/timer/timer.hpp"
@@ -27,20 +28,6 @@
 
 bool main_loop_condition = true;  //主循环的条件
 
-class test
-{  //测试析构函数会不会运行
-public:
-    test(const std::string & s_) : s(s_)
-    {
-    }
-    ~test()
-    {
-        fmt::print("test {}释放了~~~\n", s);
-    };
-
-private:
-    std::string s;
-};
 
 void signalHandler(int signum)  //信号处理函数
 {
@@ -48,23 +35,6 @@ void signalHandler(int signum)  //信号处理函数
     main_loop_condition = false;
 }
 
-//可变参数列表
-template <typename... T> void Print(T &&... args)
-{
-    fmt::print("{} {} \n", args...);
-}
-
-void testForClass(bool & condition)
-{
-    test s{"b"};
-    int i = 0;
-    while (condition) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        // fmt::print(fg(fmt::color::green), "B\n");
-        i++;
-    }
-    fmt::print(fg(fmt::color::green), "{}\n", i);
-}
 
 /**
  * @brief 相机处理线程
@@ -112,7 +82,7 @@ void camera_thread(
         // fmt::print("[相机读取] 每次花费时间: {}\n", wasteTime);
         //动量更新
         temp_time = timer.end(0, "read image");
-            // (tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_nsec - tv_start.tv_nsec) / 1e9;  //s
+        // (tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_nsec - tv_start.tv_nsec) / 1e9;  //s
         this_time = a * this_time + (1 - a) * temp_time;
         //"适当地"休眠一段时间
         // std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -143,6 +113,7 @@ int main(int argc, char ** argv)
     utils::timer timer{"main", 10};
 
     Modules::Detect detector{color};
+    Modules::Posture_Calculating solver{};
 
     int frame = 1;  //主线程的帧数
 
@@ -162,10 +133,10 @@ int main(int argc, char ** argv)
     double temp_time        = 0;     //temp
     double main_thread_time = 0;     //主线程的时间
 
+    auto startTime = std::chrono::system_clock::now();
 
     for (; main_loop_condition; frame++) {
         if (camera_start) {
-
             //计时
             // timer.start(1);
             {  //上锁
@@ -173,52 +144,43 @@ int main(int argc, char ** argv)
                 copyImg = img.clone();
             }
             // timer.end(1, "lock");
-            
+
             // timer.start(1);
+            auto endTime = std::chrono::system_clock::now();
+            auto wasteTime =
+                std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() /
+                1e3;
+
             Robot::Detection_pack detection_pack;
             detection_pack.img       = copyImg;
-            detection_pack.timestamp = tv_start.tv_sec + tv_start.tv_nsec / 1e9;
+            detection_pack.timestamp = wasteTime;
             // timer.end(1, "init detection_pack");
 
-            
-            timer.start(0);
+            // timer.start(0);
             detector.detect(detection_pack);
-            timer.end(0, "detect");
+            // timer.end(0, "detect");
+            solver.solve(detection_pack);
 
             Robot::drawArmours(detection_pack.armours, copyImg, color);
 
             // timer.start(0);
             cv::imshow("after_draw", copyImg);
-            cv::waitKey(1);//waitKey(1) == waitKey(20)
+            cv::waitKey(1);  //waitKey(1) == waitKey(20)
             // timer.end(0, "imshow");
-
 
         } else {  //相机线程未开始
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             fmt::print(fg(fmt::color::red), "[WARN] 未开始！");
         }
-        // sleep(1);
-        // clock_gettime(CLOCK_REALTIME, &tv_end);
-        // temp_time = (tv_end.tv_sec - tv_start.tv_sec) + (tv_end.tv_nsec - tv_start.tv_nsec) / 1e9;
-        // main_thread_time = a * main_thread_time + (1 - a) * temp_time;
-        // fmt::print("[main] 每次花费时间: {} ms\n", main_thread_time*1e3);
+
     }
-    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     my_logger.close();
 
-    if (cameraThread.joinable()) {
-        cameraThread.join();
-    } else {
-        fmt::print("camera thread can't join");
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    while (camera_start)  //当其他线程都释放完后，退出主线程
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
-
-    // while (!camera_start)  //当其他线程都释放完后，退出主线程
-    // {
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    // }
-
-    fmt::print(fg(fmt::color::red),"end! \n");
+    fmt::print(fg(fmt::color::red), "end! \n");
     return 0;
 }

@@ -8,8 +8,9 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 aux_source_directory(detect_armour detect_src)
+aux_source_directory(posture_calculating posture_calculating_src)
 
-add_library(modules SHARED ${detect_src})
+add_library(modules SHARED ${detect_src} ${posture_calculating_src})
 
 target_link_libraries(modules
     ${OpenCV_LIBS}
