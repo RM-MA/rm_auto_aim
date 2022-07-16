@@ -18,16 +18,23 @@ message("end-----------------------------")
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
+
 add_executable(fmt_test fmt_test.cpp)
 
 add_executable(configs_test configs_test.cpp)
 
 add_executable(serial_test serial_test.cpp)
 
+add_executable(create_mat create_mat.cpp)
+
 target_link_libraries(fmt_test 
 ${OpenCV_LIBS}
 fmt::fmt)
 
 target_link_libraries(configs_test
+${OpenCV_LIBS}
+fmt::fmt)
+
+target_link_libraries(create_mat 
 ${OpenCV_LIBS}
 fmt::fmt)

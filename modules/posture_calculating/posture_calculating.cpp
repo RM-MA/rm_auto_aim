@@ -23,9 +23,11 @@ Posture_Calculating::Posture_Calculating()
         PROJECT_DIR "/Configs/posture_calculating/posture_calculating.yaml", cv::FileStorage::READ};
     file_read["camera"]["cameraMatrix"] >> F_MAT;  //相机内参
     file_read["camera"]["distCoeffs"] >> C_MAT;    //相机畸变
+    file_read["camera"]["Tcb"] >> R_CI_MAT; //陀螺仪坐标系到相机坐标系的旋转矩阵
 
-    // cv::cv2eigen(F_MAT, F);
-    // cv::cv2eigen(C_MAT, C);
+    cv::cv2eigen(F_MAT, F);
+    cv::cv2eigen(C_MAT, C);
+    cv::cv2eigen(R_CI_MAT, R_CI);
 
     double small_half_x, small_half_y;
     double big_half_x, big_half_y;
@@ -37,9 +39,9 @@ Posture_Calculating::Posture_Calculating()
 
     /*
     - point 0: [-squareLength / 2, squareLength / 2, 0]
-- point 1: [ squareLength / 2, squareLength / 2, 0]
-- point 2: [ squareLength / 2, -squareLength / 2, 0]
-- point 3: [-squareLength / 2, -squareLength / 2, 0]
+    - point 1: [ squareLength / 2, squareLength / 2, 0]
+    - point 2: [ squareLength / 2, -squareLength / 2, 0]
+    - point 3: [-squareLength / 2, -squareLength / 2, 0]
     */
     small_obj = std::vector<cv::Point3f>{
         cv::Point3f(-small_half_x, small_half_y, 0),    //left top
