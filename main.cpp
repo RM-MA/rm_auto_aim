@@ -10,8 +10,11 @@
 #include <ctime>
 //自
 #include "devices/camera/mv_camera.hpp"
+#include "devices/serial/serial.hpp"
+
 #include "modules/detect_armour/detect.hpp"
 #include "modules/posture_calculating/posture_calculating.hpp"
+
 #include "utils/logger/logger.hpp"
 #include "utils/robot.hpp"
 #include "utils/timer/timer.hpp"
@@ -28,13 +31,11 @@
 
 bool main_loop_condition = true;  //主循环的条件
 
-
 void signalHandler(int signum)  //信号处理函数
 {
     fmt::print(fg(fmt::color::red) | fmt::emphasis::bold, "正在退出,请等待释放资源!\n");
     main_loop_condition = false;
 }
-
 
 /**
  * @brief 相机处理线程
@@ -104,6 +105,7 @@ int main(int argc, char ** argv)
 
     bool camera_start = false;
     std::mutex img_mutex;
+    std::mutex serial_mutex;
 
     Robot::Color color = Robot::Color::BLUE;
 
@@ -114,6 +116,8 @@ int main(int argc, char ** argv)
 
     Modules::Detect detector{color};
     Modules::Posture_Calculating solver{};
+
+    Devices::Serial serial{"/dev/ttyACM0", serial_mutex};
 
     int frame = 1;  //主线程的帧数
 
@@ -134,6 +138,7 @@ int main(int argc, char ** argv)
     double main_thread_time = 0;     //主线程的时间
 
     auto startTime = std::chrono::system_clock::now();
+    serial.openSerial();
 
     for (; main_loop_condition; frame++) {
         if (camera_start) {
@@ -151,16 +156,22 @@ int main(int argc, char ** argv)
                 std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() /
                 1e3;
 
-            Robot::Detection_pack detection_pack;
-            detection_pack.img       = copyImg;
-            detection_pack.timestamp = wasteTime;
+            Robot::Detection_pack detection_pack{copyImg, wasteTime};
+            // detection_pack.img       = copyImg;
+            // detection_pack.timestamp = wasteTime;
             // timer.end(1, "init detection_pack");
 
             // timer.start(0);
             detector.detect(detection_pack);
             // timer.end(0, "detect");
-            solver.solve(detection_pack);
-
+            bool solve_success = solver.solve(detection_pack.armours);
+            if (solve_success) {
+                serial.sendData(
+                    detection_pack.armours.front().center.x,
+                    detection_pack.armours.front().center.x);
+            } else {
+                serial.noArmour();
+            }
             Robot::drawArmours(detection_pack.armours, copyImg, color);
 
             // timer.start(0);
@@ -172,7 +183,6 @@ int main(int argc, char ** argv)
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             fmt::print(fg(fmt::color::red), "[WARN] 未开始！");
         }
-
     }
 
     my_logger.close();

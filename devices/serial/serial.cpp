@@ -19,15 +19,20 @@ Serial::Serial(const std::string & name, std::mutex & mutex)
 bool Serial::openSerial()
 {
     if (isOpen()) {
-        fmt::print(fg(fmt::color::red) | fmt::emphasis::blink, "串口{:^15}已打开!!\n");
+        fmt::print(fg(fmt::color::red) | fmt::emphasis::blink, "串口{:^15}已打开!!\n", name);
         return false;
     }
     //互斥信号量
     std::lock_guard<std::mutex> l(serial_mutex);
+    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "123", name);
+    int message = system(terminal_command.c_str());
+    if(message < 0){
+        fmt::print(fg(fmt::color::red) | fmt::emphasis::bold, "执行命令{}, 失败\n", terminal_command);
+    }
     fd = open(name.c_str(), O_RDWR | O_NOCTTY);  //加O_NDELAY，为非阻塞式读取
 
     if (fd == -1) {
-        fmt::print(fg(fmt::color::red) | fmt::emphasis::blink, "打开串口{:^15}失败!!\n");
+        fmt::print(fg(fmt::color::red) | fmt::emphasis::blink, "打开串口{:^15}失败!!\n", name);
         return false;
     }
     struct termios options;  // termios为类型名的结构
@@ -97,6 +102,9 @@ bool Serial::sendData(float send_yaw, float send_pitch)
     } else {
         return false;
     }
+}
+bool Serial::noArmour(){
+    return sendData(0, 0);
 }
 
 bool Serial::readSerial()

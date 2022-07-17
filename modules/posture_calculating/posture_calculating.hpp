@@ -1,6 +1,8 @@
 #ifndef _POSTURE_CALCULATING_HPP_
 #define _POSTURE_CALCULATING_HPP_
 
+#include <Eigen/Dense>
+
 #include <string>
 #include <vector>
 
@@ -9,7 +11,6 @@
 #include <fmt/color.h>
 #include <fmt/core.h>
 
-#include <Eigen/Dense>
 
 #include "../utils/robot.hpp"
 
@@ -23,7 +24,7 @@ class Posture_Calculating
 {
 public:
     Posture_Calculating();
-    bool solve(Robot::Detection_pack &);
+    bool solve(std::vector<Robot::Armour>&);
 
     Posture_Calculating(Posture_Calculating const &) = delete;
     Posture_Calculating & operator=(Posture_Calculating const &) = delete;
@@ -36,7 +37,7 @@ private:
     cv::Mat F_MAT;     // 相机内参矩阵CV-Mat
     cv::Mat C_MAT;     // 相机畸变矩阵CV-Mat
 
-    std::vector<cv::Point3f> small_obj, big_obj;  //大小装甲板
+    std::vector<cv::Point3d> small_obj, big_obj;  //大小装甲板
 
     // pnp解算:获取相机坐标系内装甲板坐标
     bool solvepnp(Robot::Armour &);

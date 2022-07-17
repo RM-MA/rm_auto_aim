@@ -45,18 +45,18 @@ bool Detect::detect(Robot::Detection_pack & detection_pack)
     //变量的初始化
     cv::Mat processImage;
 
-    auto & armours = detection_pack.armours;
-    auto & img     = detection_pack.img;
+    // auto & armours = detection_pack.armours;
+    // auto & img     = detection_pack.img;
 
     std::vector<Robot::Light> lights;
 
     //对图像进行处理
-    process(img, processImage);
+    process(detection_pack.img, processImage);
     cv::imshow("processImage", processImage);
 
     //匹配灯条和装甲板
-    match_Lights(img, processImage, lights);
-    match_Armours(lights, armours);
+    match_Lights(detection_pack.img, processImage, lights);
+    match_Armours(lights, detection_pack.armours);
 
     return true;
 }

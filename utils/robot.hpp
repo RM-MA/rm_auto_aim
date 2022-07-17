@@ -75,7 +75,7 @@ struct ArmourParams  //匹配装甲板条件参数
 struct Armour
 {
     Armour() = default;
-    Armour(const Light & light1, const Light & light2)
+    Armour(const Light & light1, const Light & light2):camera_points(), world_points()
     {
         if (light1.center.x < light2.center.x) {
             left_light = light1, right_light = light2;
@@ -100,6 +100,10 @@ struct Detection_pack  //每帧的打包数据结构
     double timestamp;  //时间戳
     // cv::Point2f * pts; //
     std::vector<Armour> armours;  //装甲板
+    Detection_pack() = default;
+    Detection_pack(cv::Mat& img, double timestamp):img(img), timestamp(timestamp){
+        // armours.reserve(30000);
+    }
 };
 
 enum class ShootLevel { Level1, Level2, Level3 };
