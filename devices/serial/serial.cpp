@@ -24,21 +24,22 @@ bool Serial::openSerial()
     }
     //互斥信号量
     std::lock_guard<std::mutex> l(serial_mutex);
-    fd = open(name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);  //加O_NDELAY，为非阻塞式读取
+    fd = open(name.c_str(), O_RDWR | O_NOCTTY);  //加O_NDELAY，为非阻塞式读取
 
     if (fd == -1) {
         fmt::print(fg(fmt::color::red) | fmt::emphasis::blink, "打开串口{:^15}失败!!\n");
         return false;
     }
-    struct termios options;  // termios为类型名的结构体
+    struct termios options;  // termios为类型名的结构
     tcgetattr(fd, &options);
     // 波特率115200, 8N1
     options.c_cflag     = B115200 | CS8 | CLOCAL | CREAD;
     options.c_iflag     = IGNPAR;
     options.c_oflag     = 0;
     options.c_lflag     = 0;
-    options.c_cc[VTIME] = 0;
-    options.c_cc[VMIN]  = 1;
+    //当设置为 阻塞模式时生效
+    options.c_cc[VTIME] = 0;//最少读取字符数
+    options.c_cc[VMIN]  = 1;//超时时间, 单位: 100ms
     tcflush(fd, TCIFLUSH);             //清除缓冲区
     tcsetattr(fd, TCSANOW, &options);  //应用上面的设置
 
