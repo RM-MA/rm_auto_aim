@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <iostream>
+#include "robot.hpp"
 
 namespace Modules
 {
@@ -24,8 +25,13 @@ Detect::Detect(const Robot::Color & color) : color(color)
     //从文件读取配置参数
     cv::FileStorage file(PROJECT_DIR "/Configs/detect/detect.yaml", cv::FileStorage::READ);
     //阈值
-    file["Thresholds"]["lowerb"] >> lowerb;
-    file["Thresholds"]["upperb"] >> upperb;
+    if (color == Robot::Color::RED) {
+        file["Thresholds"]["red"]["lowerb"] >> lowerb;
+        file["Thresholds"]["red"]["upperb"] >> upperb;
+    } else {
+        file["Thresholds"]["blue"]["lowerb"] >> lowerb;
+        file["Thresholds"]["blue"]["upperb"] >> upperb;
+    }
     //灯条匹配条件参数
     file["light"]["min_ratio"] >> light_params.min_ratio;
     file["light"]["max_ratio"] >> light_params.max_ratio;
@@ -200,7 +206,7 @@ bool Detect::isArmour(Robot::Armour & armour)
     armour.armour_type = center_distance > armour_params.min_large_center_distance
                              ? Robot::ArmourType::Big
                              : Robot::ArmourType::Small;
-
+    // fmt::print("w:h = {}\n", center_distance);
     //匹配出的装甲板的与x轴的角度
     cv::Point2f diff = ligth_1.center - light_2.center;
     float angle      = std::abs(std::atan(diff.y / diff.x));

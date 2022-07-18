@@ -16,8 +16,8 @@
 
 namespace Modules
 {
-const auto camera_fmt = fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold, "{}", "相机坐标系");
-const auto world_fmt = fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold, "{}", "世界坐标系");
+const auto camera_fmt = fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "相机坐标系");
+const auto world_fmt = fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "世界坐标系");
 
 //位姿解算
 class Posture_Calculating

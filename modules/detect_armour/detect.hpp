@@ -36,6 +36,7 @@ private:
     const Robot::Color color;//敌方颜色
 
     cv::Scalar lowerb, upperb;          //二值化的高低阈值
+    
     Robot::LightParams light_params;    //灯条条件参数
     Robot::ArmourParams armour_params;  //装甲板条件参数
 };  //Detect

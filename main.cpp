@@ -109,6 +109,14 @@ int main(int argc, char ** argv)
 
     Robot::Color color = Robot::Color::BLUE;
 
+    if(argc == 2){
+        if(argv[1][0] - '0' == 1){//1 红
+            color = Robot::Color::RED;
+        }else if(argv[1][0] - '0' == 0){//0 蓝
+            color = Robot::Color::BLUE;
+        }
+    }
+
     logger::logger my_logger{
         "i={}, j={},{:.3f}\n",        logger::LOGGER_TYPE::ALL, PROJECT_DIR "/test.csv", true, "",
         O_WRONLY | O_CREAT | O_APPEND};
@@ -189,7 +197,7 @@ int main(int argc, char ** argv)
 
     while (camera_start)  //当其他线程都释放完后，退出主线程
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
     fmt::print(fg(fmt::color::red), "end! \n");
     return 0;

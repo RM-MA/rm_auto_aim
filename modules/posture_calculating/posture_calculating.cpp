@@ -59,7 +59,7 @@ Posture_Calculating::Posture_Calculating()
         {big_half_x, -big_half_y, 0},   //right bottom
         {big_half_x, big_half_y, 0}};   //left bottom
 
-    std::cout << "小装甲板=" << small_obj << "\n 大装甲板=" << big_obj << std::endl;
+    // std::cout << "小装甲板=" << small_obj << "\n 大装甲板=" << big_obj << std::endl;
 }
 
 bool Posture_Calculating::solvepnp(Robot::Armour & armour)
@@ -74,7 +74,7 @@ bool Posture_Calculating::solvepnp(Robot::Armour & armour)
     std::cout << armour.right_light.top << ", " << armour.right_light.bottom << std::endl;
     cv::Mat rvec, tvec;  //
     bool success;
-    if (armour.armour_type != Robot::ArmourType::Big) {
+    if (armour.armour_type == Robot::ArmourType::Big) {
         success =
             cv::solvePnP(big_obj, armour_points, F_MAT, C_MAT, rvec, tvec, false, cv::SOLVEPNP_P3P);
         fmt::print("big armour\n");
@@ -90,7 +90,7 @@ bool Posture_Calculating::solvepnp(Robot::Armour & armour)
     armour.camera_points.x = tvec.at<double>(0);
     armour.camera_points.y = tvec.at<double>(1);
     armour.camera_points.z = tvec.at<double>(2);
-    std::cout << "tvec=" << tvec << std::endl;
+    // std::cout << "tvec=" << tvec << std::endl;
     fmt::print(
         fg(fmt::color::yellow), "{}:[{:.4f}, {:.4f}, {:.4f}]\n", camera_fmt, armour.camera_points.x,
         armour.camera_points.y, armour.camera_points.z);
