@@ -45,7 +45,7 @@ public:
     float yaw();
     float pitch();
 
-    bool sendData(Robot::sendData);
+    bool sendData(Robot::sendData& );
 
     Robot::receiveData getData();
 

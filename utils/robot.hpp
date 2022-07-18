@@ -5,11 +5,13 @@
 // #include <opencv2/core/types.hpp>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <opencv2/core/types.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
 #include <fmt/color.h>
+#include <sys/types.h>
 
 namespace Robot
 {
@@ -38,6 +40,13 @@ struct sendData
 {
     float yaw, pitch;
     uint8_t goal;
+    sendData() = default;
+    sendData(uint8_t goal) : yaw(0), pitch(0), goal(goal)
+    {
+    }
+    sendData(double yaw, double pitch, uint8_t goal = 1) : yaw(yaw), pitch(pitch), goal(goal)
+    {
+    }
 };
 
 enum class ArmourType { Small, Big };

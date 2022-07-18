@@ -1,4 +1,6 @@
 //OpenCV
+#include <cmath>
+#include <functional>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
@@ -93,6 +95,35 @@ void camera_thread(
     camera_start = false;
 }
 
+/**
+ * @brief 读取串口线程
+ * 
+ */
+void readSerial_thread(Devices::Serial & reader)
+{
+    while (main_loop_condition) {
+        if (!reader.isOpen()) {
+            reader.openSerial();
+        }
+        bool read_message = reader.readSerial();
+        if (!read_message) {
+            fmt::print(fg(fmt::color::red), "读取串口失败!\n");
+        }
+        auto res = reader.getData();
+        fmt::print("[yaw={}, pitch={}, shoot_speed={}]\n", res.yaw, res.pitch, res.shoot_speed);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+}
+
+void sendSerial_thread(Devices::Serial & sender, Robot::sendData & send_data)
+{
+    if (!sender.sendData(send_data)) {
+        fmt::print(fg(fmt::color::red) | fmt::emphasis::bold, "发送串口失败!\n");
+    }  //else{
+    //     fmt::print("[yaw={}, pitch={}, shoot_speed{}]", send_data.yaw, send_data.pitch, send_data);
+    // }
+}
+
 int main(int argc, char ** argv)
 {
     //注册信号量，处理 Ctrl + C 中断
@@ -109,10 +140,10 @@ int main(int argc, char ** argv)
 
     Robot::Color color = Robot::Color::BLUE;
 
-    if(argc == 2){
-        if(argv[1][0] - '0' == 1){//1 红
+    if (argc == 2) {
+        if (argv[1][0] - '0' == 1) {  //1 红
             color = Robot::Color::RED;
-        }else if(argv[1][0] - '0' == 0){//0 蓝
+        } else if (argv[1][0] - '0' == 0) {  //0 蓝
             color = Robot::Color::BLUE;
         }
     }
@@ -137,7 +168,10 @@ int main(int argc, char ** argv)
     std::thread cameraThread{camera_thread,          std::ref(main_loop_condition),
                              std::ref(img),          std::ref(img_mutex),
                              std::ref(camera_start), std::ref(timestamp_ms)};
+    std::thread readSerialThread{readSerial_thread, std::ref(serial)};
+
     cameraThread.detach();
+    readSerialThread.detach();
     //计时
     struct timespec tv_start;        //开始的时间戳
     struct timespec tv_end;          //结束的时间戳
@@ -174,12 +208,26 @@ int main(int argc, char ** argv)
             // timer.end(0, "detect");
             bool solve_success = solver.solve(detection_pack.armours, showimg);
             if (solve_success) {
+                auto cps = detection_pack.armours.front().camera_points;
+                Robot::sendData send_data{std::atan(cps.y / cps.z), std::atan(cps.x / cps.z)};
+                std::thread sendSerialThread{
+                    sendSerial_thread, std::ref(serial), std::ref(send_data)};
+                sendSerialThread.detach();
+            }else{
+                Robot::sendData send_data{0};
+                std::thread sendSerialThread{
+                    sendSerial_thread, std::ref(serial), std::ref(send_data)};
+                sendSerialThread.detach();
+            }
+            /*
+            if (solve_success) {
                 serial.sendData(
                     detection_pack.armours.front().center.x,
                     detection_pack.armours.front().center.x);
             } else {
                 serial.noArmour();
             }
+            */
             Robot::drawArmours(detection_pack.armours, showimg, color);
 
             // timer.start(0);

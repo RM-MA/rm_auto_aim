@@ -14,8 +14,8 @@ namespace Devices
 Serial::Serial(const std::string & name, std::mutex & mutex)
 : name(name), fd(-1), serial_mutex(mutex)
 {
-    frame_header = 0x0a;  //帧头
-    frame_tail   = 0x0d;  //帧尾
+    frame_header = 0x0b;  //帧头
+    frame_tail   = 0x0a;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
 }
 
 bool Serial::openSerial()
@@ -90,21 +90,29 @@ bool Serial::sendData(float send_yaw, float send_pitch)
     */
     _yaw.f = send_yaw, _pitch.f = send_pitch;
     send_buffer_[0] = frame_header;
-    send_buffer_[1] = frame_tail;
+    send_buffer_[10] = frame_tail;
     for (int i = 0; i < 4; i++) {
         send_buffer_[2 + i] = _yaw.uchars[i];
-    }
-    for (int i = 0; i < 4; i++) {
         send_buffer_[6 + i] = _pitch.uchars[i];
     }
-
+    send_buffer_[1] = 1;
     //互斥信号量
     std::lock_guard<std::mutex> l(serial_mutex);
     if (11 == write(fd, send_buffer_, 11)) {
+        printf("send buffer = ");
+        for(int i =0; i < 11; i++){
+            printf("%hhu ", send_buffer_[i]);
+        }
+        printf("\n");
         return true;
     } else {
         return false;
     }
+}
+
+bool Serial::sendData(Robot::sendData & send_data)
+{
+    return sendData(send_data.yaw, send_data.pitch);
 }
 
 Robot::receiveData Serial::getData()
@@ -135,22 +143,23 @@ bool Serial::readSerial()
     std::lock_guard<std::mutex> l(serial_mutex);  //
     //head
     if (read(fd, read_buffer_, 1) != 1) {
-        //读取不到帧头
+        // 读取不到帧头
+        // 当为阻塞模式时, 为超时
         return false;
     }
     if (read_buffer_[0] != frame_header) {
-        //帧头验证失败
+        // 帧头验证失败
         return false;
     }
     if (read(fd, read_buffer_ + 1, 13) != 13) {
-        //读取剩余内容失败
+        // 读取剩余内容失败
         return false;
     }
     if (read_buffer_[13] != frame_tail) {
-        //帧尾验证失败
+        // 帧尾验证失败
         return false;
     }
-    //.
+    // 赋值
     for (int i = 0; i < 4; i++) {
         _yaw.uchars[i]         = read_buffer_[1 + i];
         _pitch.uchars[i]       = read_buffer_[5 + i];
