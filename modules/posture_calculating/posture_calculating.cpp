@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <opencv2/imgproc.hpp>
 #include <vector>
 
 #include <fmt/color.h>
@@ -70,8 +71,8 @@ bool Posture_Calculating::solvepnp(Robot::Armour & armour)
     armour_points.emplace_back(armour.left_light.top);
     armour_points.emplace_back(armour.right_light.top);
     armour_points.emplace_back(armour.right_light.bottom);
-    std::cout << armour.left_light.bottom << ", " << armour.left_light.top << std::endl;
-    std::cout << armour.right_light.top << ", " << armour.right_light.bottom << std::endl;
+    // std::cout << armour.left_light.bottom << ", " << armour.left_light.top << std::endl;
+    // std::cout << armour.right_light.top << ", " << armour.right_light.bottom << std::endl;
     cv::Mat rvec, tvec;  //
     bool success;
     if (armour.armour_type == Robot::ArmourType::Big) {
@@ -97,7 +98,7 @@ bool Posture_Calculating::solvepnp(Robot::Armour & armour)
     return success;
 }
 
-bool Posture_Calculating::solve(std::vector<Robot::Armour> & armours)
+bool Posture_Calculating::solve(std::vector<Robot::Armour> & armours, cv::Mat& showimg)
 {
     // cv::Mat & img    = detection_pack.img;
     // double timestamp = detection_pack.timestamp;
@@ -134,6 +135,13 @@ bool Posture_Calculating::solve(std::vector<Robot::Armour> & armours)
     auto select_armour = armours.front();
     solvepnp(select_armour);
 
+    // 测试: 从 相机坐标系 投影回 图片坐标系    
+    // Eigen::Vector3d test_camera_point;//x y z
+    // test_camera_point << 0, 0.5, 3;
+    // auto pu = pc2pu(test_camera_point);
+    // std::cout << pu << std::endl;
+    // cv::circle(showimg, {int(pu(0, 0)), int(pu(1, 0))}, 5, cv::Scalar(0, 255, 0));
+    
     return true;
 }
 }  // namespace Modules

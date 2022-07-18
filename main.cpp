@@ -157,7 +157,7 @@ int main(int argc, char ** argv)
                 copyImg = img.clone();
             }
             // timer.end(1, "lock");
-
+            cv::Mat showimg = img;
             // timer.start(1);
             auto endTime = std::chrono::system_clock::now();
             auto wasteTime =
@@ -172,7 +172,7 @@ int main(int argc, char ** argv)
             // timer.start(0);
             detector.detect(detection_pack);
             // timer.end(0, "detect");
-            bool solve_success = solver.solve(detection_pack.armours);
+            bool solve_success = solver.solve(detection_pack.armours, showimg);
             if (solve_success) {
                 serial.sendData(
                     detection_pack.armours.front().center.x,
@@ -180,10 +180,10 @@ int main(int argc, char ** argv)
             } else {
                 serial.noArmour();
             }
-            Robot::drawArmours(detection_pack.armours, copyImg, color);
+            Robot::drawArmours(detection_pack.armours, showimg, color);
 
             // timer.start(0);
-            cv::imshow("after_draw", copyImg);
+            cv::imshow("after_draw", showimg);
             cv::waitKey(1);  //waitKey(1) == waitKey(20)
             // timer.end(0, "imshow");
 

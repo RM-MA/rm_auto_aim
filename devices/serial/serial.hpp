@@ -4,6 +4,7 @@
 #include "../utils/robot.hpp"
 
 #include <fmt/core.h>
+#include <opencv2/core/hal/interface.h>
 
 #include <string>
 
@@ -44,6 +45,10 @@ public:
     float yaw();
     float pitch();
 
+    bool sendData(Robot::sendData);
+
+    Robot::receiveData getData();
+
     Serial(Serial const &) = delete;
     Serial & operator=(Serial const &) = delete;
 
@@ -51,12 +56,14 @@ private:
     uchar send_buffer_[BufferMaxSize];
     uchar read_buffer_[BufferMaxSize];
 
-    float_uchar _yaw, _pitch;
+    float_uchar _yaw, _pitch, _shoot_speed;
 
     std::string name;
     std::mutex& serial_mutex;
 
     int fd;  //串口句柄
+
+    uchar frame_header, frame_tail;
 };
 
 }  // namespace Devices

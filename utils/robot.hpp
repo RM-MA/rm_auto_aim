@@ -22,6 +22,24 @@ enum class RobotType {
     Sentry,      //哨兵
 };
 
+struct receiveData
+{
+    float yaw, pitch;
+    float shoot_speed;
+
+    receiveData() = default;
+    receiveData(float yaw, float pitch, float shoot_speed)
+    : yaw(yaw), pitch(pitch), shoot_speed(shoot_speed)
+    {
+    }
+};
+
+struct sendData
+{
+    float yaw, pitch;
+    uint8_t goal;
+};
+
 enum class ArmourType { Small, Big };
 
 enum class Color  //敌方颜色
@@ -75,7 +93,7 @@ struct ArmourParams  //匹配装甲板条件参数
 struct Armour
 {
     Armour() = default;
-    Armour(const Light & light1, const Light & light2):camera_points(), world_points()
+    Armour(const Light & light1, const Light & light2) : camera_points(), world_points()
     {
         if (light1.center.x < light2.center.x) {
             left_light = light1, right_light = light2;
@@ -101,7 +119,8 @@ struct Detection_pack  //每帧的打包数据结构
     // cv::Point2f * pts; //
     std::vector<Armour> armours;  //装甲板
     Detection_pack() = default;
-    Detection_pack(cv::Mat& img, double timestamp):img(img), timestamp(timestamp){
+    Detection_pack(cv::Mat & img, double timestamp) : img(img), timestamp(timestamp)
+    {
         // armours.reserve(30000);
     }
 };
@@ -131,7 +150,6 @@ inline bool drawArmours(const std::vector<Armour> & armours, cv::Mat & drawImg, 
     }
     return true;
 }
-
 
 }  // namespace Robot
 

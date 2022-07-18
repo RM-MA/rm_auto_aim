@@ -102,7 +102,7 @@ bool Detect::match_Lights(
         auto rect = light.boundingRect();  //rect.x, rect.y为左上点
         //防止ROI超出图片边界
         if (!(rect.x >= 0 && rect.width >= 0 && rect.x + rect.width <= bgr_img.cols &&
-              rect.y >= 0 && rect.height >= 0 && rect.y + rect.y <= bgr_img.rows)) {
+              rect.y >= 0 && rect.height >= 0 && rect.y + rect.height <= bgr_img.rows)) {
             continue;
         }
         auto roi = bgr_img(rect);

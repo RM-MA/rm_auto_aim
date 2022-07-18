@@ -24,7 +24,7 @@ class Posture_Calculating
 {
 public:
     Posture_Calculating();
-    bool solve(std::vector<Robot::Armour>&);
+    bool solve(std::vector<Robot::Armour>&, cv::Mat&);
 
     Posture_Calculating(Posture_Calculating const &) = delete;
     Posture_Calculating & operator=(Posture_Calculating const &) = delete;
