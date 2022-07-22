@@ -86,7 +86,8 @@ bool Serial::sendData(float send_yaw, float send_pitch)
     1: 有无目标
     2-5: yaw
     6-9: pitch
-    10: 帧尾 0x0d
+    10: 
+    11: 帧尾 0x0d
     */
     _yaw.f = send_yaw, _pitch.f = send_pitch;
     send_buffer_[0] = frame_header;

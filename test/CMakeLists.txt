@@ -4,6 +4,7 @@ project(ma)
 set(CMAKE_CXX_STANDAND 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # clangd
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast -pthread" )
 
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
@@ -27,6 +28,9 @@ add_executable(serial_test serial_test.cpp)
 
 add_executable(create_mat create_mat.cpp)
 
+add_executable(shoot_test shoot_test.cpp)
+
+
 target_link_libraries(fmt_test 
 ${OpenCV_LIBS}
 fmt::fmt)
@@ -36,5 +40,9 @@ ${OpenCV_LIBS}
 fmt::fmt)
 
 target_link_libraries(create_mat 
+${OpenCV_LIBS}
+fmt::fmt)
+
+target_link_libraries(shoot_test
 ${OpenCV_LIBS}
 fmt::fmt)
