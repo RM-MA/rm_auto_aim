@@ -30,6 +30,7 @@ add_executable(create_mat create_mat.cpp)
 
 add_executable(shoot_test shoot_test.cpp)
 
+add_executable(kf_test kf_test.cpp)
 
 target_link_libraries(fmt_test 
 ${OpenCV_LIBS}
@@ -44,5 +45,9 @@ ${OpenCV_LIBS}
 fmt::fmt)
 
 target_link_libraries(shoot_test
+${OpenCV_LIBS}
+fmt::fmt)
+
+target_link_libraries(kf_test
 ${OpenCV_LIBS}
 fmt::fmt)
