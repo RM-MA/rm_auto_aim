@@ -130,7 +130,7 @@ bool MV_Camera::open()
 
     MV_CHECK_API_ERROR(CameraSetIspOutFormat(handle, CAMERA_MEDIA_TYPE_BGR8), "");
     // 保存相机配置
-    // MV_CHECK_API_ERROR(CameraSaveParameterToFile(handle, PROJECT_DIR"/configs/camera/MV-SUA133GC-T_042003320218.Config"), "");
+    MV_CHECK_API_ERROR(CameraSaveParameterToFile(handle, PROJECT_DIR"/configs/camera/MV-SUA133GC-T-MS.config"), "");
 
     return true;
 }

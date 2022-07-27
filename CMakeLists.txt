@@ -13,8 +13,8 @@ find_package(Eigen3 REQUIRED)
 
 
 message("init----------------------------")
-message("Eigen: Version=${Eigen3_VERSION}")
-message("OpenCV: Version=${OpenCV_VERSION}")
+message("Eigen: Version=${Eigen3_VERSION}, ${EIGEN3_INCLUDE_DIRS}")
+message("OpenCV: Version=${OpenCV_VERSION}, ${OpenCV_INCLUDE_DIRS}")
 message("${PROJECT_SOURCE_DIR}")
 message("end-----------------------------")
 

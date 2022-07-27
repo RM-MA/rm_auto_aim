@@ -156,7 +156,7 @@ int main(int argc, char ** argv)
     Modules::Detect detector{color};
     Modules::Posture_Calculating solver{};
 
-    Devices::Serial serial{"/dev/ttyACM0", serial_mutex};
+    Devices::Serial serial{"/dev/ttyTHS2", serial_mutex};
 
     int frame = 1;  //主线程的帧数
 

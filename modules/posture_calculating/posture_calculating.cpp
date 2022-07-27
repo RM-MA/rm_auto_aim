@@ -77,11 +77,11 @@ bool Posture_Calculating::solvepnp(Robot::Armour & armour)
     bool success;
     if (armour.armour_type == Robot::ArmourType::Big) {
         success =
-            cv::solvePnP(big_obj, armour_points, F_MAT, C_MAT, rvec, tvec, false, cv::SOLVEPNP_P3P);
+            cv::solvePnP(big_obj, armour_points, F_MAT, C_MAT, rvec, tvec);
         fmt::print("big armour\n");
     } else {
         success = cv::solvePnP(
-            small_obj, armour_points, F_MAT, C_MAT, rvec, tvec, false, cv::SOLVEPNP_IPPE);
+            small_obj, armour_points, F_MAT, C_MAT, rvec, tvec);
         fmt::print("small armour\n");
     }
     if (!success) {

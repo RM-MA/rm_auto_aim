@@ -26,7 +26,7 @@ bool Serial::openSerial()
     }
     //互斥信号量
     std::lock_guard<std::mutex> l(serial_mutex);
-    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "123", name);
+    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "dji", name);
     int message           = system(terminal_command.c_str());
     if (message < 0) {
         fmt::print(
@@ -40,8 +40,8 @@ bool Serial::openSerial()
     }
     struct termios options;  // termios为类型名的结构
     tcgetattr(fd, &options);
-    // 波特率115200, 8N1
-    options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
+    // 波特率460800, 8N1
+    options.c_cflag = B460800 | CS8 | CLOCAL | CREAD;
     options.c_iflag = IGNPAR;
     options.c_oflag = 0;
     options.c_lflag = 0;

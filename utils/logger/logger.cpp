@@ -1,10 +1,11 @@
 #include "logger.hpp"
 
-#include <bits/types/FILE.h>
 #include <fcntl.h>
 #include <fmt/color.h>
 #include <fmt/core.h>
 #include <fmt/os.h>
+
+
 /*
 logger::logger::logger(const std::string& fmt_, const LOGGER_TYPE& type_, const std::string& path_, bool addTimestamp_, const std::string& description_, int oflag = O_WRONLY | O_CREAT)
     {
