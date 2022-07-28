@@ -1,3 +1,6 @@
+#ifndef _EKF_H_
+#define _EKF_H_
+
 #include <fmt/color.h>
 #include <fmt/core.h>
 
@@ -5,7 +8,14 @@
 
 #include <Eigen/Dense>
 
-struct Predict
+using MatrixZZ = Eigen::Matrix<double, 3, 3>;
+using MatrixXZ = Eigen::Matrix<double, 6, 3>;
+using MatrixZX = Eigen::Matrix<double, 3, 6>;
+using MatrixXX = Eigen::Matrix<double, 6, 6>;
+using VectorZ  = Eigen::Matrix<double, 3, 1>;
+using VectorX  = Eigen::Matrix<double, 6, 1>;
+
+struct Predict  // f(x)
 {
     /*
      * 此处定义匀速直线运动模型
@@ -23,7 +33,7 @@ struct Predict
     double delta_t;
 };
 
-struct Measure
+struct Measure  // h(x)
 {
     /*
      * 工具函数的类封装
@@ -40,13 +50,6 @@ struct Measure
 class AdaptiveEKF
 {
 public:
-    using MatrixZZ = Eigen::Matrix<double, 3, 3>;
-    using MatrixXZ = Eigen::Matrix<double, 6, 3>;
-    using MatrixZX = Eigen::Matrix<double, 3, 6>;
-    using MatrixXX = Eigen::Matrix<double, 6, 6>;
-    using VectorZ  = Eigen::Matrix<double, 3, 1>;
-    using VectorX  = Eigen::Matrix<double, 6, 1>;
-
 public:
     explicit AdaptiveEKF(const VectorX & X0 = VectorX::Zero())  //Identity()初始化一个单位矩阵
     : Xe(X0), P(MatrixXX::Identity()), Q(MatrixXX::Identity()), R(MatrixZZ::Identity())
@@ -113,38 +116,4 @@ public:
     VectorZ Zp;  // 预测观测量
 };
 
-int main()
-{
-    Predict predictfunc;
-    predictfunc.delta_t = 1;
-
-    AdaptiveEKF ekf;
-    Measure measure;
-
-    using EKF = AdaptiveEKF;
-
-    int t = 1;
-    double x, y, z;
-
-    for (; t <= 20; t++) {
-        fmt::print(fg(fmt::color::orange), "Epochs: {} / 20\n", t);
-        x = 1.5 * t;
-        y = 2.0 * t;
-        z = t * t;
-        // z = 2 * t * t;
-        EKF::VectorZ z_k{x, y, z};
-        ekf.predict(predictfunc);
-        EKF::VectorX xe = ekf.update(measure, z_k);
-        fmt::print("Now: [x={}, y={}, z={}]\n", x, y, z);
-        fmt::print(
-            "Predict: Position: [x={:.3f}, y={:.3f}, z={:.3f}]\n ", xe(0, 0), xe(1, 0), xe(2, 0));
-
-        fmt::print("Predict: Speed: [v_x={:.3f}, v_y={:.3f}, v_z={:.3f}]\n", xe(3, 0), xe(4, 0), xe(5, 0));
-
-        fmt::print(
-            fg(fmt::color::aqua), "Speed diff: [v_x = {:.3f}, v_y = {:.3f}, v_z = {:.3f}]\n",
-            1.5 - xe(3, 0), 2.0 - xe(4, 0), 2 * t - xe(5, 0));
-    }
-
-    return 0;
-}
+#endif /*_EKF_H_*/
