@@ -1,7 +1,9 @@
-#ifndef _POSTURE_CALCULATING_HPP_
-#define _POSTURE_CALCULATING_HPP_
+#ifndef _PREDICTOR_EKF_HPP_
+#define _PREDICTOR_EKF_HPP_
 
 #include <Eigen/Dense>
+
+#include <opencv2/core/eigen.hpp>
 
 #include <string>
 #include <vector>
@@ -11,27 +13,30 @@
 #include <fmt/color.h>
 #include <fmt/core.h>
 
-
+#include "../devices/serial/serial.hpp"
 #include "../utils/robot.hpp"
 
 namespace Modules
 {
-const auto camera_fmt = fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "相机坐标系");
+const auto camera_fmt =
+    fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "相机坐标系");
 const auto world_fmt = fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "世界坐标系");
 
 //位姿解算
-class Posture_Calculating
+class PredictorEKF
 {
 public:
-    Posture_Calculating();
-    bool solve(std::vector<Robot::Armour>&, cv::Mat&);
+    explicit PredictorEKF();
+    bool solve(std::vector<Robot::Armour> &, cv::Mat &);
+    bool predict(Robot::Detection_pack &, const Devices::ReceiveData& ,Devices::SendData& );
 
-    Posture_Calculating(Posture_Calculating const &) = delete;
-    Posture_Calculating & operator=(Posture_Calculating const &) = delete;
+    PredictorEKF(PredictorEKF const &) = delete;
+    PredictorEKF & operator=(PredictorEKF const &) = delete;
 
 private:
-    Eigen::Matrix3d R_CI;  // 陀螺仪坐标系 到 相机坐标系旋转矩阵EIGEN-Matrix
-    Eigen::Matrix3d F;     // 相机内参矩阵EIGEN-Matrix
+    //当枪管和相机安装角度差小时，相当与变换一下xyz轴
+    Eigen::Matrix3d R_CI;  // 相机坐标系 到 陀螺仪坐标系  的旋转矩阵,
+    Eigen::Matrix3d F;              // 相机内参矩阵EIGEN-Matrix
     Eigen::Matrix<double, 1, 5> C;  // 相机畸变矩阵EIGEN-Matrix
     cv::Mat R_CI_MAT;  // 陀螺仪坐标系 到 相机坐标系旋转矩阵CV-Mat, 旋转+平移
     cv::Mat F_MAT;     // 相机内参矩阵CV-Mat
@@ -40,7 +45,7 @@ private:
     std::vector<cv::Point3d> small_obj, big_obj;  //大小装甲板
 
     // pnp解算:获取相机坐标系内装甲板坐标
-    bool solvepnp(Robot::Armour &);
+    Eigen::Vector3d get_camera_points(std::vector<cv::Point2f> &, Robot::ArmourType);
 
     // 相机坐标系内坐标--->世界坐标系内坐标
     inline Eigen::Vector3d pc2pw(
@@ -76,4 +81,4 @@ private:
 
 }  //namespace Modules
 
-#endif /*_POSTURE_CALCULATING_HPP_*/
+#endif /*_PREDICTOR_EKF_HPP_*/

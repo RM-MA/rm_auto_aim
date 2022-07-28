@@ -14,8 +14,12 @@ namespace Devices
 Serial::Serial(const std::string & name, std::mutex & mutex)
 : name(name), fd(-1), serial_mutex(mutex)
 {
-    frame_header = 0xff;  //帧头
-    frame_tail   = 0xfe;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
+    frame_header = 0x0a;  //帧头
+    frame_tail   = 0x0f;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
+    loss         = 0;
+
+    tv.tv_sec  = 1;  //秒
+    tv.tv_usec = 0;
 }
 
 bool Serial::openSerial()
@@ -26,7 +30,7 @@ bool Serial::openSerial()
     }
     //互斥信号量
     std::lock_guard<std::mutex> l(serial_mutex);
-    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "dji", name);
+    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "666", name);
     int message           = system(terminal_command.c_str());
     if (message < 0) {
         fmt::print(
@@ -40,15 +44,17 @@ bool Serial::openSerial()
     }
     struct termios options;  // termios为类型名的结构
     tcgetattr(fd, &options);
-    // 波特率460800, 8N1
-    options.c_cflag = B460800 | CS8 | CLOCAL | CREAD;
-    options.c_iflag = IGNPAR;
-    options.c_oflag = 0;
-    options.c_lflag = 0;
+    // 波特率115200, 8N1
+    options.c_iflag = IGNPAR;                          //输入模式
+    options.c_oflag = 0;                               //输出模式
+    options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;  //控制模式
+    options.c_lflag = 0;                               //本地模式
+    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+    //特殊控制模式
     //当设置为 阻塞模式时生效
-    options.c_cc[VTIME] = 0;           //最少读取字符数
-    options.c_cc[VMIN]  = 1;           //超时时间, 单位: 100ms
-    tcflush(fd, TCIFLUSH);             //清除缓冲区
+    options.c_cc[VTIME] = 0;  //最少读取字符数
+    options.c_cc[VMIN]  = 1;  //超时时间, 单位: 100ms
+    // tcflush(fd, TCIFLUSH);             //清除缓冲区
     tcsetattr(fd, TCSANOW, &options);  //应用上面的设置
 
     return true;
@@ -79,52 +85,52 @@ bool Serial::isOpen()
     return fd > 0;
 }
 
-bool Serial::sendData(float send_yaw, float send_pitch)
+bool Serial::sendData(SendData & send_data)
 {
-    /*send_buffer_
-    0: 帧头 0x0a
-    1: 有无目标
-    2-5: yaw
-    6-9: pitch
-    10: 
-    11: 帧尾 0x0d
+    /*发送数据报
+    帧头: 0;
+    有无目标: 1;
+    yaw轴角度: 2-5;
+    pitch轴角度: 6-9;
+    递增数据位: 10;
+    帧尾: 11;
     */
-    _yaw.f = send_yaw, _pitch.f = send_pitch;
-    send_buffer_[0] = frame_header;
-    send_buffer_[10] = frame_tail;
+    send_yaw.f   = send_data.send_yaw;
+    send_pitch.f = send_data.send_pitch;
+    //帧头、帧尾
+    send_buffer_[0]  = frame_header;
+    send_buffer_[11] = frame_tail;
+
+    send_buffer_[1] = send_data.goal;
+
     for (int i = 0; i < 4; i++) {
-        send_buffer_[2 + i] = _yaw.uchars[i];
-        send_buffer_[6 + i] = _pitch.uchars[i];
+        send_buffer_[i + 2] = send_yaw.uchars[i];
+        send_buffer_[i + 6] = send_pitch.uchars[i];
     }
-    send_buffer_[1] = 1;
-    //互斥信号量
-    std::lock_guard<std::mutex> l(serial_mutex);
-    if (11 == write(fd, send_buffer_, 11)) {
-        printf("send buffer = ");
-        for(int i =0; i < 11; i++){
-            printf("%hhu ", send_buffer_[i]);
-        }
-        printf("\n");
-        return true;
+    send_buffer_[10] = loss;
+    loss             = (loss + 1) % 0xff;
+
+    if (write(fd, send_buffer_, 12) == 12) {
     } else {
+        fmt::print(fg(fmt::color::red), "串口发送失败!\n");
         return false;
     }
+
+    return true;
 }
 
-bool Serial::sendData(Robot::sendData & send_data)
-{
-    return sendData(send_data.yaw, send_data.pitch);
-}
-
-Robot::receiveData Serial::getData()
+ReceiveData Serial::getData()
 {
     std::lock_guard<std::mutex> l(serial_mutex);  //
-    Robot::receiveData data{_yaw.f, _pitch.f, _shoot_speed.f};
+
+    ReceiveData data{read_yaw.f, read_pitch.f, last_shoot_speed};
     return data;
 }
 bool Serial::noArmour()
 {
-    return sendData(0, 0);
+    SendData send_data{};
+    sendData(send_data);
+    return true;
 }
 
 bool Serial::readSerial()
@@ -141,47 +147,52 @@ bool Serial::readSerial()
     9-12: shoot_speed 射速
     13: 0x0d 帧尾
     */
+    FD_ZERO(&fds);
+    FD_SET(fd, &fds);
+    //利用select函数，在tv时刻内检测串口是否有
+    if (select(fd + 1, &fds, NULL, NULL, &tv) < 0) 
+    {
+        return false;
+    }
     std::lock_guard<std::mutex> l(serial_mutex);  //
     //head
     if (read(fd, read_buffer_, 1) != 1) {
         // 读取不到帧头
         // 当为阻塞模式时, 为超时
-        fmt::print("no frame head\n");
         return false;
     }
     if (read_buffer_[0] != frame_header) {
         // 帧头验证失败
-        fmt::print("frame head fault\n");
         return false;
     }
     if (read(fd, read_buffer_ + 1, 13) != 13) {
         // 读取剩余内容失败
-        fmt::print("no frame tail\n");
         return false;
     }
     if (read_buffer_[13] != frame_tail) {
         // 帧尾验证失败
-        fmt::print("frame tail fault\n");
         return false;
     }
     // 赋值
     for (int i = 0; i < 4; i++) {
-        _yaw.uchars[i]         = read_buffer_[1 + i];
-        _pitch.uchars[i]       = read_buffer_[5 + i];
-        _shoot_speed.uchars[i] = read_buffer_[9 + i];
+        read_yaw.uchars[i]    = read_buffer_[1 + i];
+        read_pitch.uchars[i]  = read_buffer_[5 + i];
+        shoot_speed.uchars[i] = read_buffer_[9 + i];
     }
-
+    updateShootSpeed(shoot_speed.f);
     // std::this_thread::sleep_for(std::chrono::milliseconds(5));  //sleep 5ms
     return true;
 }
 
-float Serial::yaw()
-{
-    return _yaw.f;
-}
-float Serial::pitch()
-{
-    return _pitch.f;
+
+float Serial::updateShootSpeed(float new_speed){
+    if(new_speed <= 0){
+        return last_shoot_speed;
+    }
+    double a = 0.99;
+    new_speed = a * last_shoot_speed + (1-a) * new_speed;
+    last_shoot_speed = new_speed;
+    return last_shoot_speed;
 }
 
 }  // namespace Devices
