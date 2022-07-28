@@ -53,7 +53,7 @@ int main(int argc, char ** argv)
 
     //相机进程
     std::thread cameraThread{
-        camera_thread, std::ref(main_loop_condition), std::ref(img), std::ref(camera_start),
+        camera_thread, std::ref(main_loop_condition), std::ref(img), std::ref(camera_mutex),
         std::ref(timestamp_ms)};
     std::thread readSerialThread{readSerial_thread, std::ref(serial)};
 
@@ -73,10 +73,13 @@ int main(int argc, char ** argv)
         //计时
         // timer.start(1);
         {  //上锁
+            if(img.empty()){
+                std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+            }
             std::lock_guard<std::mutex> l(camera_mutex);
             copyImg = img.clone();
         }
-
+        
         // timer.start(1);
         auto endTime = std::chrono::system_clock::now();
         auto wasteTime =

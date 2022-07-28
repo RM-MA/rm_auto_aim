@@ -121,8 +121,11 @@ bool Modules::PredictorEKF::predict(
     double send_pitch = std::atan2(i_points(2, 0), i_points(0, 0));   // 向上为正
     double send_yaw   = -std::atan2(i_points(1, 0), i_points(0, 0));  // 向右为正
 
+    fmt::print("[send]: yaw={:.3f}, pitch={:.3f}\n", send_yaw, send_pitch);
+
     send_data.send_pitch = send_pitch;
     send_data.send_yaw   = send_yaw;
+    send_data.goal = 1;
 
     return true;
 }

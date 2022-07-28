@@ -14,8 +14,8 @@ namespace Devices
 Serial::Serial(const std::string & name, std::mutex & mutex)
 : name(name), fd(-1), serial_mutex(mutex)
 {
-    frame_header = 0x0a;  //帧头
-    frame_tail   = 0x0f;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
+    frame_header = 0xff;  //帧头
+    frame_tail   = 0xfe;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
     loss         = 0;
 
     tv.tv_sec  = 1;  //秒
@@ -29,9 +29,10 @@ bool Serial::openSerial()
         return false;
     }
     //互斥信号量
-    std::lock_guard<std::mutex> l(serial_mutex);
-    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "666", name);
-    int message           = system(terminal_command.c_str());
+    // std::lock_guard<std::mutex> l(serial_mutex);
+    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "dji", name);
+    int message = 1;
+    // int message           = system(terminal_command.c_str());
     if (message < 0) {
         fmt::print(
             fg(fmt::color::red) | fmt::emphasis::bold, "执行命令{}, 失败\n", terminal_command);
@@ -47,7 +48,7 @@ bool Serial::openSerial()
     // 波特率115200, 8N1
     options.c_iflag = IGNPAR;                          //输入模式
     options.c_oflag = 0;                               //输出模式
-    options.c_cflag = B115200 | CS8 | CLOCAL | CREAD;  //控制模式
+    options.c_cflag = B460800 | CS8 | CLOCAL | CREAD;  //控制模式
     options.c_lflag = 0;                               //本地模式
     options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
     //特殊控制模式
@@ -103,9 +104,12 @@ bool Serial::sendData(SendData & send_data)
 
     send_buffer_[1] = send_data.goal;
 
+    {
+        std::lock_guard<std::mutex> l(data_mutex);
     for (int i = 0; i < 4; i++) {
         send_buffer_[i + 2] = send_yaw.uchars[i];
         send_buffer_[i + 6] = send_pitch.uchars[i];
+    }
     }
     send_buffer_[10] = loss;
     loss             = (loss + 1) % 0xff;
@@ -121,7 +125,7 @@ bool Serial::sendData(SendData & send_data)
 
 ReceiveData Serial::getData()
 {
-    std::lock_guard<std::mutex> l(serial_mutex);  //
+    std::lock_guard<std::mutex> l(data_mutex);  //
 
     ReceiveData data{read_yaw.f, read_pitch.f, last_shoot_speed};
     return data;

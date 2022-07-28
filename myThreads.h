@@ -60,10 +60,9 @@ inline void camera_thread(
     bool & condition, cv::Mat & img, std::mutex & camera_mutex,
     double & timestamp_ms)
 {
-    std::unique_lock<std::mutex> camera_lock{camera_mutex};
+    // std::unique_lock<std::mutex> camera_lock{camera_mutex, std::try_to_lock};
 
-    camera_lock.lock();
-
+    // camera_lock.lock();
     //初始化相机
     Devices::MV_Camera mv_camera{PROJECT_DIR "/Configs/camera/MV-SUA133GC.config"};
     utils::timer timer{"camera", 1, false};
@@ -81,11 +80,17 @@ inline void camera_thread(
         timer.start(0);
         // 读取图片,
         THREAD_ASSERT_WARNING(mv_camera.read(read_img), "读取相机图片失败");
+        if(!read_img.empty()){
+            cv::resize(read_img, read_img, cv::Size(640, 480));
+        }
+        {
 
+        std::lock_guard<std::mutex> l(camera_mutex);
         // 对共享的123123图片上锁
-        camera_lock.try_lock();
+        // camera_lock.try_lock();
         img = read_img.clone();  //深拷贝，
-        camera_lock.unlock();
+        }
+        // camera_lock.unlock();
 
         //动量更新
         temp_time = timer.end(0, "read image");

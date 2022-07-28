@@ -13,7 +13,11 @@ distCoeffs: !!opencv-matrix
    dt: d 
    data: [ -0.124338400066620, 0.370890179553010,
        0.000981003945523325, 0.00642193470947452, 0. ]
-
+Tcb: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 0., -1., 0., 0., 0., -1., 1., 0., 0. ]
 armour:
   small_half_x: 0.066 # 67.5
   small_half_y: 0.027 # 27.5

@@ -88,6 +88,7 @@ private:
 
     std::string name;
     std::mutex & serial_mutex;
+    std::mutex data_mutex;
 
     float last_shoot_speed = 30;
     float updateShootSpeed(float);
