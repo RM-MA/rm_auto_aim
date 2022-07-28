@@ -1,15 +1,3 @@
-//OpenCV
-#include <cmath>
-#include <functional>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/opencv.hpp>
-//信号处理
-#include <unistd.h>  //信号处理
-#include <csignal>   //信号处理
-//计时
-#include <chrono>
-#include <ctime>
 //自
 #include "devices/camera/mv_camera.hpp"
 #include "devices/serial/serial.hpp"
@@ -23,15 +11,7 @@
 
 #include "myThreads.h"
 
-//fmt
-#include <fmt/color.h>
-#include <fmt/core.h>
-
 #include <string>
-
-//多线程
-#include <mutex>
-#include <thread>
 
 int main(int argc, char ** argv)
 {
@@ -40,7 +20,7 @@ int main(int argc, char ** argv)
 
     // 控制量声明
     bool camera_start = false;
-    std::mutex img_mutex;
+    std::mutex camera_mutex;
     std::mutex serial_mutex;
 
     // 确定敌方颜色
@@ -63,7 +43,6 @@ int main(int argc, char ** argv)
     // Modules::Posture_Calculating solver{};
     Modules::PredictorEKF predictor{};
 
-
     Devices::Serial serial{"/dev/ttyTHS2", serial_mutex};
 
     int frame = 1;  //主线程的帧数
@@ -73,9 +52,9 @@ int main(int argc, char ** argv)
     double timestamp_ms;  //曝光时间, 单位us
 
     //相机进程
-    std::thread cameraThread{camera_thread,          std::ref(main_loop_condition),
-                             std::ref(img),          std::ref(img_mutex),
-                             std::ref(camera_start), std::ref(timestamp_ms)};
+    std::thread cameraThread{
+        camera_thread, std::ref(main_loop_condition), std::ref(img), std::ref(camera_start),
+        std::ref(timestamp_ms)};
     std::thread readSerialThread{readSerial_thread, std::ref(serial)};
 
     cameraThread.detach();
@@ -91,56 +70,47 @@ int main(int argc, char ** argv)
     serial.openSerial();
 
     for (; main_loop_condition; frame++) {
-        if (camera_start) {
-            //计时
-            // timer.start(1);
-            {  //上锁
-                std::lock_guard<std::mutex> l(img_mutex);
-                copyImg = img.clone();
-            }
-
-            // timer.start(1);
-            auto endTime = std::chrono::system_clock::now();
-            auto wasteTime =
-                std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() /
-                1e3;
-
-            cv::Mat showimg   = img;
-            auto receive_data = serial.getData();
-
-            Robot::Detection_pack detection_pack{copyImg, wasteTime};
-            // detection_pack.img       = copyImg;
-            // detection_pack.timestamp = wasteTime;
-            // timer.end(1, "init detection_pack");
-
-            // timer.start(0);
-            detector.detect(detection_pack);
-            // timer.end(0, "detect");
-            Devices::SendData send_data{};
-
-            predictor.predict(detection_pack, receive_data, send_data);
-
-            std::thread sendSerialThread{sendSerial_thread, std::ref(serial), std::ref(send_data)};
-            sendSerialThread.detach();
-            Robot::drawArmours(detection_pack.armours, showimg, color);
-
-            // timer.start(0);
-            cv::imshow("after_draw", showimg);
-            cv::waitKey(1);  //waitKey(1) == waitKey(20)
-            // timer.end(0, "imshow");
-
-        } else {  //相机线程未开始
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            fmt::print(fg(fmt::color::red), "[WARN] 未开始！");
+        //计时
+        // timer.start(1);
+        {  //上锁
+            std::lock_guard<std::mutex> l(camera_mutex);
+            copyImg = img.clone();
         }
+
+        // timer.start(1);
+        auto endTime = std::chrono::system_clock::now();
+        auto wasteTime =
+            std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() /
+            1e3;
+
+        cv::Mat showimg   = img;
+        auto receive_data = serial.getData();
+
+        Robot::Detection_pack detection_pack{copyImg, wasteTime};
+        // timer.end(1, "init detection_pack");
+
+        // timer.start(0);
+        detector.detect(detection_pack);
+        // timer.end(0, "detect");
+
+        Devices::SendData send_data{};
+        predictor.predict(detection_pack, receive_data, send_data);
+
+        std::thread sendSerialThread{sendSerial_thread, std::ref(serial), std::ref(send_data)};
+        sendSerialThread.detach();
+        // draw
+        Robot::drawArmours(detection_pack.armours, showimg, color);
+
+        // timer.start(0);
+        cv::imshow("after_draw", showimg);
+        cv::waitKey(1);  //waitKey(1) == waitKey(20)
+
+        // timer.end(0, "imshow");
     }
 
     my_logger.close();
 
-    while (camera_start)  //当其他线程都释放完后，退出主线程
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-    }
-    fmt::print(fg(fmt::color::red), "end! \n");
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    fmt::print(fg(fmt::color::red), "end! wait for 5s\n");
     return 0;
 }

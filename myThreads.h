@@ -57,7 +57,7 @@ inline void signalHandler(int signum)  //信号处理函数
  * 动量更新：t_i = (1 - a)*t_i + a*t_i-1, 超参数a
  */
 inline void camera_thread(
-    bool & condition, cv::Mat & img, std::mutex & camera_mutex, bool & camera_start,
+    bool & condition, cv::Mat & img, std::mutex & camera_mutex,
     double & timestamp_ms)
 {
     std::unique_lock<std::mutex> camera_lock{camera_mutex};
@@ -96,7 +96,6 @@ inline void camera_thread(
         // fmt::print("[相机读取] 每次花费时间: {} ms\n", this_time * 1e3);
     }
     mv_camera.close();
-    camera_start = false;
 }
 
 /**

@@ -107,6 +107,13 @@ bool Modules::PredictorEKF::predict(
         "[世界坐标系]: {:.3f},{:.3f},{:.3f}\n", world_points(0, 0), world_points(1, 0),
         world_points(2, 0));
 
+    // 求解发送的yaw和pitch角度
+    double send_pitch = std::atan2(i_points(2, 0), i_points(0, 0));   // 向上为正
+    double send_yaw   = -std::atan2(i_points(1, 0), i_points(0, 0));  // 向右为正
+
+    send_data.send_pitch = send_pitch;
+    send_data.send_yaw   = send_yaw;
+
     return true;
 }
 
