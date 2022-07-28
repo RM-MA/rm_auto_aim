@@ -14,8 +14,8 @@ namespace Devices
 Serial::Serial(const std::string & name, std::mutex & mutex)
 : name(name), fd(-1), serial_mutex(mutex)
 {
-    frame_header = 0x0b;  //帧头
-    frame_tail   = 0x0a;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
+    frame_header = 0xff;  //帧头
+    frame_tail   = 0xfe;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
 }
 
 bool Serial::openSerial()
@@ -146,18 +146,22 @@ bool Serial::readSerial()
     if (read(fd, read_buffer_, 1) != 1) {
         // 读取不到帧头
         // 当为阻塞模式时, 为超时
+        fmt::print("no frame head\n");
         return false;
     }
     if (read_buffer_[0] != frame_header) {
         // 帧头验证失败
+        fmt::print("frame head fault\n");
         return false;
     }
     if (read(fd, read_buffer_ + 1, 13) != 13) {
         // 读取剩余内容失败
+        fmt::print("no frame tail\n");
         return false;
     }
     if (read_buffer_[13] != frame_tail) {
         // 帧尾验证失败
+        fmt::print("frame tail fault\n");
         return false;
     }
     // 赋值

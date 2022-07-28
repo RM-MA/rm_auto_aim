@@ -69,6 +69,7 @@ void camera_thread(
         // auto startTime = std::chrono::system_clock::now();
         //读取图片, 并对图片上锁
         mv_camera.read(img_cpoy, timestamp_ms);
+        cv::resize(img_cpoy, img_cpoy, cv::Size(640, 480));
         {
             std::lock_guard<std::mutex> l(img_mutex);  //上锁
             img = img_cpoy.clone();                    //深拷贝，

@@ -91,6 +91,8 @@ bool Posture_Calculating::solvepnp(Robot::Armour & armour)
     armour.camera_points.x = tvec.at<double>(0);
     armour.camera_points.y = tvec.at<double>(1);
     armour.camera_points.z = tvec.at<double>(2);
+
+    Eigen::Vector3d camera_points;
     // std::cout << "tvec=" << tvec << std::endl;
     fmt::print(
         fg(fmt::color::yellow), "{}:[{:.4f}, {:.4f}, {:.4f}]\n", camera_fmt, armour.camera_points.x,

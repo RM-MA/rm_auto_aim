@@ -20,7 +20,7 @@ int open(const std::string name)
     struct termios options;
     tcgetattr(fd, &options);
     // 115200, 8N1
-    options.c_cflag     = B115200 | CS8 | CLOCAL | CREAD;
+    options.c_cflag     = B460800 | CS8 | CLOCAL | CREAD;
     // options.c_cflag &= ~PARENB;//无校验位
     // options.c_cflag &= ~CSTOPB;//1位停止位
     options.c_iflag     = IGNPAR;
@@ -36,7 +36,7 @@ int open(const std::string name)
 
 union Float_Uchar {
     float   f;
-    uint8_t uchars[4] = {0};
+    unsigned char uchars[4];
 };
 
 unsigned char write_buff_[8];
@@ -44,6 +44,7 @@ unsigned char read_buff_[4];
 
 int main()
 {
+    /*
     Float_Uchar f1;
     f1.f = 3.1415926f;//DA 0F 49 40 -- 218 15 73 64
     Float_Uchar f2;
@@ -75,5 +76,13 @@ int main()
         read_.uchars[i] = read_buff_[i];
     }
     printf("read data = %f\n", read_.f);
+
+    */
+   int fd = open("/dev/ttyTHS2");
+    while(1){
+        if(1 == read(fd, read_buff_, 1)){
+            printf("%hhx, ", read_buff_[0]);
+        }
+    }
     return 0;
 }

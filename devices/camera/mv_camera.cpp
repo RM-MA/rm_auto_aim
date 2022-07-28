@@ -110,7 +110,8 @@ bool MV_Camera::open()
             "从文件读取相机配置文件错误，路径为: {}", camera_cfg);
     }
     */
-
+    // 保存相机配置
+    //MV_CHECK_API_ERROR(CameraSaveParameterToFile(handle, PROJECT_DIR"/configs/camera/MV-SUA133GC-T-MS.config"), "");
     //相机配置文件的index要改成255, 否则设置的图片大小无效!!
     fmt::print("配置文件路径：{}\n", camera_cfg);
     MV_CHECK_API_WARNING(
@@ -129,8 +130,7 @@ bool MV_Camera::open()
     //MV_CHECK_API_ERROR(CameraLoadParameter(handle, PARAMETER_TEAM_A), "");
 
     MV_CHECK_API_ERROR(CameraSetIspOutFormat(handle, CAMERA_MEDIA_TYPE_BGR8), "");
-    // 保存相机配置
-    MV_CHECK_API_ERROR(CameraSaveParameterToFile(handle, PROJECT_DIR"/configs/camera/MV-SUA133GC-T-MS.config"), "");
+
 
     return true;
 }
