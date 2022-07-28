@@ -1,6 +1,12 @@
 #include "PredictorEKF.hpp"
 
-Modules::PredictorEKF::PredictorEKF()
+
+// 射击延时。单位 s
+double shoot_delay_time = 0.1; 
+
+
+
+Modules::PredictorEKF::PredictorEKF() : ekf()
 {
     cv::FileStorage fin{PROJECT_DIR "/Configs/camera/camera.yaml", cv::FileStorage::READ};
 
@@ -106,6 +112,10 @@ bool Modules::PredictorEKF::predict(
     fmt::print(
         "[世界坐标系]: {:.3f},{:.3f},{:.3f}\n", world_points(0, 0), world_points(1, 0),
         world_points(2, 0));
+
+    ekf.predict(predictfunc);
+    // x,y,z ,v_x, v_y, v_z
+    VectorX predict_status = ekf.update(measure, world_points);
 
     // 求解发送的yaw和pitch角度
     double send_pitch = std::atan2(i_points(2, 0), i_points(0, 0));   // 向上为正

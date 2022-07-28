@@ -4,17 +4,17 @@
 #include <Eigen/Dense>
 
 #include <opencv2/core/eigen.hpp>
+#include <opencv2/opencv.hpp>
 
 #include <string>
 #include <vector>
-
-#include <opencv2/opencv.hpp>
 
 #include <fmt/color.h>
 #include <fmt/core.h>
 
 #include "../devices/serial/serial.hpp"
 #include "../utils/robot.hpp"
+#include "EKF.h"
 
 namespace Modules
 {
@@ -28,19 +28,23 @@ class PredictorEKF
 public:
     explicit PredictorEKF();
     bool solve(std::vector<Robot::Armour> &, cv::Mat &);
-    bool predict(Robot::Detection_pack &, const Devices::ReceiveData& ,Devices::SendData& );
+    bool predict(Robot::Detection_pack &, const Devices::ReceiveData &, Devices::SendData &);
 
     PredictorEKF(PredictorEKF const &) = delete;
     PredictorEKF & operator=(PredictorEKF const &) = delete;
 
 private:
     //当枪管和相机安装角度差小时，相当与变换一下xyz轴
-    Eigen::Matrix3d R_CI;  // 相机坐标系 到 陀螺仪坐标系  的旋转矩阵,
+    Eigen::Matrix3d R_CI;           // 相机坐标系 到 陀螺仪坐标系  的旋转矩阵,
     Eigen::Matrix3d F;              // 相机内参矩阵EIGEN-Matrix
     Eigen::Matrix<double, 1, 5> C;  // 相机畸变矩阵EIGEN-Matrix
     cv::Mat R_CI_MAT;  // 陀螺仪坐标系 到 相机坐标系旋转矩阵CV-Mat, 旋转+平移
     cv::Mat F_MAT;     // 相机内参矩阵CV-Mat
     cv::Mat C_MAT;     // 相机畸变矩阵CV-Mat
+
+    AdaptiveEKF ekf;      // ekf预测器
+    Predict predictfunc;  // f(x)
+    Measure measure;      // h(x)
 
     std::vector<cv::Point3d> small_obj, big_obj;  //大小装甲板
 
