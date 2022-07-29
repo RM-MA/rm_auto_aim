@@ -60,7 +60,7 @@ inline void camera_thread(
     bool & condition, cv::Mat & img, std::mutex & camera_mutex, double & timestamp_ms)
 {
     //初始化相机
-    Devices::MV_Camera mv_camera{PROJECT_DIR "/Configs/camera/MV-SUA133GC.config"};
+    Devices::MV_Camera mv_camera{PROJECT_DIR "/Configs/camera/MV-SUA133GC-T-Manifold.config"};
     utils::timer timer{"camera", 1, false};
     cv::Mat read_img;
     //计时

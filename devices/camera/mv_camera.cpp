@@ -111,7 +111,7 @@ bool MV_Camera::open()
     }
     */
     // 保存相机配置
-    //MV_CHECK_API_ERROR(CameraSaveParameterToFile(handle, PROJECT_DIR"/configs/camera/MV-SUA133GC-T-MS.config"), "");
+    // MV_CHECK_API_ERROR(CameraSaveParameterToFile(handle, "/home/dji/Codes/rm_auto_aim/Configs/camera/MV-SUA133GC-T-Manifold.config"), "");
     //相机配置文件的index要改成255, 否则设置的图片大小无效!!
     fmt::print("配置文件路径：{}\n", camera_cfg);
     MV_CHECK_API_WARNING(

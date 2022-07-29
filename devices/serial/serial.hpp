@@ -90,7 +90,7 @@ private:
     std::mutex & serial_mutex;
     std::mutex data_mutex;
 
-    float last_shoot_speed = 30;
+    float last_shoot_speed = 15;
     float updateShootSpeed(float);
 
     int fd;             //串口句柄

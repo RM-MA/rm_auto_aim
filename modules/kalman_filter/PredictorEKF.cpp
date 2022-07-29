@@ -86,10 +86,10 @@ bool Modules::PredictorEKF::predict(
     auto pts           = select_armour.get_points();  //装甲板的四点，用来测距
 
     // 根据 传来的pitch角度构造 旋转矩阵
-    double pitch = receive_data.pitch;
+    double pitch = receive_data.pitch / 180. * M_PI;
     fmt::print("[read] pitch={}\n", pitch);
     Eigen::Matrix3d R_WI;
-    R_WI = Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY());
+    R_WI = Eigen::AngleAxisd(-pitch, Eigen::Vector3d::UnitY());
 
     // 得到3个坐标系下的坐标
     Eigen::Vector3d camera_points = get_camera_points(pts, select_armour.armour_type);
@@ -189,8 +189,10 @@ Eigen::Vector3d Modules::PredictorEKF::get_camera_points(
     cv::Mat tvec, rvec;
     if (type == Robot::ArmourType::Big) {
         cv::solvePnP(big_obj, armour_points, F_MAT, C_MAT, rvec, tvec);
+        fmt::print("big armour\n");
     } else {
-        cv::solvePnP(big_obj, armour_points, F_MAT, C_MAT, rvec, tvec);
+        cv::solvePnP(small_obj, armour_points, F_MAT, C_MAT, rvec, tvec);
+        fmt::print("small armour\n");
     }
 
     Eigen::Vector3d camera_points;

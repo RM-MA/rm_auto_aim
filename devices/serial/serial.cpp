@@ -15,7 +15,7 @@ Serial::Serial(const std::string & name, std::mutex & mutex)
 : name(name), fd(-1), serial_mutex(mutex)
 {
     frame_header = 0xff;  //帧头
-    frame_tail   = 0x0a;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
+    frame_tail   = 0xfe;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
     loss         = 0;
 
     tv.tv_sec  = 1;  //秒
@@ -30,7 +30,7 @@ bool Serial::openSerial()
     }
     //互斥信号量
     // std::lock_guard<std::mutex> l(serial_mutex);
-    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "123", name);
+    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "dji", name);
     int message           = system(terminal_command.c_str());
     if (message < 0) {
         fmt::print(

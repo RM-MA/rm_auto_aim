@@ -43,7 +43,7 @@ unsigned char read_buff_[4];
 
 int main()
 {
-    
+    /*
     Float_Uchar f1;
     f1.f = 0.0;//DA 0F 49 40 -- 218 15 73 64
     Float_Uchar f2;
@@ -67,6 +67,7 @@ int main()
     int fd = open("/dev/ttyACM0");
     int write_messages_ = write(fd, write_buff_, 8);
     printf("发送位数 = %d\n", write_messages_);
+    */
 /*
     int read_message_ = read(fd, read_buff_, 4);
 
@@ -75,14 +76,16 @@ int main()
         read_.uchars[i] = read_buff_[i];
     }
     printf("read data = %f\n", read_.f);
-*/
-    
-    // int fd = open("/dev/ttyTHS2");
-    // while (1) {
-    //     if (1 == read(fd, read_buff_, 1)) {
-    //         printf("%hhx, ", read_buff_[0]);
-    //     }
-    // }
+*/  
+    int fd = open("/dev/ttyTHS2");
+    for(int i = 0;;i++) {
+        if (1 == read(fd, read_buff_, 1)) {
+            if(i % 14 == 0){
+                printf("\n[%d]", i/14);
+            }
+            printf("%hhx, ", read_buff_[0]);
+        }
+    }
     
     return 0;
 }
