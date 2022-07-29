@@ -20,7 +20,13 @@ namespace Modules
 {
 const auto camera_fmt =
     fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "相机坐标系");
-const auto world_fmt = fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "世界坐标系");
+
+const auto i_fmt = fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "陀螺仪坐标系");
+
+const auto world_fmt = fmt::format(fg(fmt::color::green) | fmt::emphasis::bold, "{}", "惯性坐标系");
+
+const auto predict_fmt =
+    fmt::format(fg(fmt::color::light_green) | fmt::emphasis::bold, "{}", "预测");
 
 //位姿解算
 class PredictorEKF
@@ -28,7 +34,8 @@ class PredictorEKF
 public:
     explicit PredictorEKF();
     bool solve(std::vector<Robot::Armour> &, cv::Mat &);
-    bool predict(Robot::Detection_pack &, const Devices::ReceiveData &, Devices::SendData &);
+    bool predict(
+        Robot::Detection_pack &, const Devices::ReceiveData &, Devices::SendData &, cv::Mat &);
 
     PredictorEKF(PredictorEKF const &) = delete;
     PredictorEKF & operator=(PredictorEKF const &) = delete;
@@ -42,9 +49,17 @@ private:
     cv::Mat F_MAT;     // 相机内参矩阵CV-Mat
     cv::Mat C_MAT;     // 相机畸变矩阵CV-Mat
 
+    // 预测
     AdaptiveEKF ekf;      // ekf预测器
     Predict predictfunc;  // f(x)
     Measure measure;      // h(x)
+    double last_time = 0;
+    // 弹道模型
+    double k_1      = 0.01903;  // 空气阻力系数
+    double K       = 0.05;     // 更新比例
+    double min_ek  = 0.01;     //最小误差
+    double T_k     = 0;        // 飞行时间
+    int max_epochs = 10;       // 最大迭代轮数
 
     std::vector<cv::Point3d> small_obj, big_obj;  //大小装甲板
 

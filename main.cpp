@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
     // Modules::Posture_Calculating solver{};
     Modules::PredictorEKF predictor{};
 
-    Devices::Serial serial{"/dev/ttyTHS2", serial_mutex};
+    Devices::Serial serial{"/dev/ttyACM0", serial_mutex};
 
     int frame = 1;  //主线程的帧数
 
@@ -74,7 +74,8 @@ int main(int argc, char ** argv)
         // timer.start(1);
         {  //上锁
             if(img.empty()){
-                std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                continue;
             }
             std::lock_guard<std::mutex> l(camera_mutex);
             copyImg = img.clone();
@@ -84,7 +85,7 @@ int main(int argc, char ** argv)
         auto endTime = std::chrono::system_clock::now();
         auto wasteTime =
             std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count() /
-            1e3;
+            1e6;//单位 s
 
         cv::Mat showimg   = img;
         auto receive_data = serial.getData();
@@ -97,7 +98,7 @@ int main(int argc, char ** argv)
         // timer.end(0, "detect");
 
         Devices::SendData send_data{};
-        predictor.predict(detection_pack, receive_data, send_data);
+        predictor.predict(detection_pack, receive_data, send_data, showimg);
 
         std::thread sendSerialThread{sendSerial_thread, std::ref(serial), std::ref(send_data)};
         sendSerialThread.detach();
@@ -113,7 +114,7 @@ int main(int argc, char ** argv)
 
     my_logger.close();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     fmt::print(fg(fmt::color::red), "end! wait for 5s\n");
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     return 0;
 }

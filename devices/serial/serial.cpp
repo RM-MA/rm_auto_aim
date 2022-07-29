@@ -15,7 +15,7 @@ Serial::Serial(const std::string & name, std::mutex & mutex)
 : name(name), fd(-1), serial_mutex(mutex)
 {
     frame_header = 0xff;  //帧头
-    frame_tail   = 0xfe;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
+    frame_tail   = 0x0a;  //帧尾, 设为0x0A, 在串口调试助手中可以换行
     loss         = 0;
 
     tv.tv_sec  = 1;  //秒
@@ -30,9 +30,8 @@ bool Serial::openSerial()
     }
     //互斥信号量
     // std::lock_guard<std::mutex> l(serial_mutex);
-    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "dji", name);
-    int message = 1;
-    // int message           = system(terminal_command.c_str());
+    auto terminal_command = fmt::format("echo {}| sudo -S chmod 777 {}", "123", name);
+    int message           = system(terminal_command.c_str());
     if (message < 0) {
         fmt::print(
             fg(fmt::color::red) | fmt::emphasis::bold, "执行命令{}, 失败\n", terminal_command);
@@ -72,7 +71,7 @@ bool Serial::reOpen()
 bool Serial::closeSerial()
 {
     //互斥信号量
-    std::lock_guard<std::mutex> l(serial_mutex);
+    std::lock_guard<std::mutex> fd_lock(serial_mutex);
     int message = close(fd);
     if (message < 0) {
         return false;
@@ -106,10 +105,10 @@ bool Serial::sendData(SendData & send_data)
 
     {
         std::lock_guard<std::mutex> l(data_mutex);
-    for (int i = 0; i < 4; i++) {
-        send_buffer_[i + 2] = send_yaw.uchars[i];
-        send_buffer_[i + 6] = send_pitch.uchars[i];
-    }
+        for (int i = 0; i < 4; i++) {
+            send_buffer_[i + 2] = send_yaw.uchars[i];
+            send_buffer_[i + 6] = send_pitch.uchars[i];
+        }
     }
     send_buffer_[10] = loss;
     loss             = (loss + 1) % 0xff;
@@ -125,9 +124,10 @@ bool Serial::sendData(SendData & send_data)
 
 ReceiveData Serial::getData()
 {
-    std::lock_guard<std::mutex> l(data_mutex);  //
+    std::lock_guard<std::mutex> data_lock{data_mutex};  //
 
     ReceiveData data{read_yaw.f, read_pitch.f, last_shoot_speed};
+    // fmt::print("[get data]: yaw={}, pitch={}, shoot_speed={}\n", data.yaw, data.pitch, data.shoot_speed);
     return data;
 }
 bool Serial::noArmour()
@@ -145,56 +145,61 @@ bool Serial::readSerial()
     */
 
     /*
-    0: 0x0a 帧头
+    0: 0xff 帧头
     1-4: yaw 偏移角度
     5-8: pitch 偏移角度
     9-12: shoot_speed 射速
-    13: 0x0d 帧尾
+    13: 0xfe 帧尾
     */
     FD_ZERO(&fds);
     FD_SET(fd, &fds);
     //利用select函数，在tv时刻内检测串口是否有
-    if (select(fd + 1, &fds, NULL, NULL, &tv) < 0) 
+    if (select(fd + 1, &fds, NULL, NULL, &tv) < 0) {
+        return false;
+    }
+    // 串口句柄锁
     {
-        return false;
+        std::lock_guard<std::mutex> fd_lock(serial_mutex);
+        //head
+        if (read(fd, read_buffer_, 1) != 1) {
+            // 读取不到帧头
+            // 当为阻塞模式时, 为超时
+            return false;
+        }
+        if (read_buffer_[0] != frame_header) {
+            // 帧头验证失败
+            return false;
+        }
+        if (read(fd, read_buffer_ + 1, 13) != 13) {
+            // 读取剩余内容失败
+            return false;
+        }
+        if (read_buffer_[13] != frame_tail) {
+            // 帧尾验证失败
+            return false;
+        }
     }
-    std::lock_guard<std::mutex> l(serial_mutex);  //
-    //head
-    if (read(fd, read_buffer_, 1) != 1) {
-        // 读取不到帧头
-        // 当为阻塞模式时, 为超时
-        return false;
+    // 赋值, 数据互斥锁
+    {
+        std::lock_guard<std::mutex> data_lock{data_mutex};
+        for (int i = 0; i < 4; i++) {
+            read_yaw.uchars[i]    = read_buffer_[1 + i];
+            read_pitch.uchars[i]  = read_buffer_[5 + i];
+            shoot_speed.uchars[i] = read_buffer_[9 + i];
+        }
+        updateShootSpeed(shoot_speed.f);
     }
-    if (read_buffer_[0] != frame_header) {
-        // 帧头验证失败
-        return false;
-    }
-    if (read(fd, read_buffer_ + 1, 13) != 13) {
-        // 读取剩余内容失败
-        return false;
-    }
-    if (read_buffer_[13] != frame_tail) {
-        // 帧尾验证失败
-        return false;
-    }
-    // 赋值
-    for (int i = 0; i < 4; i++) {
-        read_yaw.uchars[i]    = read_buffer_[1 + i];
-        read_pitch.uchars[i]  = read_buffer_[5 + i];
-        shoot_speed.uchars[i] = read_buffer_[9 + i];
-    }
-    updateShootSpeed(shoot_speed.f);
     // std::this_thread::sleep_for(std::chrono::milliseconds(5));  //sleep 5ms
     return true;
 }
 
-
-float Serial::updateShootSpeed(float new_speed){
-    if(new_speed <= 0){
+float Serial::updateShootSpeed(float new_speed)
+{
+    if (new_speed <= 0) {
         return last_shoot_speed;
     }
-    double a = 0.99;
-    new_speed = a * last_shoot_speed + (1-a) * new_speed;
+    double a         = 0.99;
+    new_speed        = a * last_shoot_speed + (1 - a) * new_speed;
     last_shoot_speed = new_speed;
     return last_shoot_speed;
 }

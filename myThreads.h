@@ -57,12 +57,8 @@ inline void signalHandler(int signum)  //信号处理函数
  * 动量更新：t_i = (1 - a)*t_i + a*t_i-1, 超参数a
  */
 inline void camera_thread(
-    bool & condition, cv::Mat & img, std::mutex & camera_mutex,
-    double & timestamp_ms)
+    bool & condition, cv::Mat & img, std::mutex & camera_mutex, double & timestamp_ms)
 {
-    // std::unique_lock<std::mutex> camera_lock{camera_mutex, std::try_to_lock};
-
-    // camera_lock.lock();
     //初始化相机
     Devices::MV_Camera mv_camera{PROJECT_DIR "/Configs/camera/MV-SUA133GC.config"};
     utils::timer timer{"camera", 1, false};
@@ -80,17 +76,15 @@ inline void camera_thread(
         timer.start(0);
         // 读取图片,
         THREAD_ASSERT_WARNING(mv_camera.read(read_img), "读取相机图片失败");
-        if(!read_img.empty()){
-            cv::resize(read_img, read_img, cv::Size(640, 480));
-        }
-        {
+        // if(!read_img.empty()){
+        //     cv::resize(read_img, read_img, cv::Size(640, 480));
+        // }
 
-        std::lock_guard<std::mutex> l(camera_mutex);
-        // 对共享的123123图片上锁
-        // camera_lock.try_lock();
-        img = read_img.clone();  //深拷贝，
+        // 对共享的图片上锁
+        {
+            std::lock_guard<std::mutex> l(camera_mutex);
+            img = read_img.clone();  //深拷贝，
         }
-        // camera_lock.unlock();
 
         //动量更新
         temp_time = timer.end(0, "read image");
@@ -101,6 +95,7 @@ inline void camera_thread(
         // fmt::print("[相机读取] 每次花费时间: {} ms\n", this_time * 1e3);
     }
     mv_camera.close();
+
 }
 
 /**
@@ -116,7 +111,7 @@ inline void readSerial_thread(Devices::Serial & reader)
         THREAD_ASSERT_WARNING(reader.readSerial(), "读取串口");
 
         auto res = reader.getData();
-        fmt::print("[yaw={}, pitch={}, shoot_speed={}]\n", res.yaw, res.pitch, res.shoot_speed);
+        // fmt::print("[yaw={}, pitch={}, shoot_speed={}]\n", res.yaw, res.pitch, res.shoot_speed);
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 }
