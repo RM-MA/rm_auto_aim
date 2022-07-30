@@ -87,7 +87,7 @@ bool Modules::PredictorEKF::predict(
 
     // 根据 传来的pitch角度构造 旋转矩阵
     double pitch = receive_data.pitch / 180. * M_PI;
-    fmt::print("[read] pitch={}\n", pitch);
+    fmt::print("[read] pitch={}\n", pitch / M_PI * 180.);
     Eigen::Matrix3d R_WI;
     R_WI = Eigen::AngleAxisd(-pitch, Eigen::Vector3d::UnitY());
 
@@ -95,7 +95,6 @@ bool Modules::PredictorEKF::predict(
     Eigen::Vector3d camera_points = get_camera_points(pts, select_armour.armour_type);
     Eigen::Vector3d i_points      = R_CI.transpose() * camera_points;
     Eigen::Vector3d world_points  = pc2pw(camera_points, R_WI.transpose());
-
     // 相机坐标系，
     // x轴向右，y轴向下，z轴延相机向前方
     fmt::print(
@@ -126,9 +125,9 @@ bool Modules::PredictorEKF::predict(
     double h_k, h_r;
     double e_k;
 
-    double pitch_0 = std::atan2(i_points(2, 0), i_points(0, 0));
+    double pitch_0 = std::atan2(world_points(2, 0), world_points(0, 0));
     double pitch_k = pitch_0;
-
+/*
     int k = 1;
     for (; k <= max_epochs; k++) {
         f_tk = 1 / k_1 * std::log(k_1 * receive_data.shoot_speed * T_k + 1) - smooth_status(0, 0) -
@@ -147,10 +146,27 @@ bool Modules::PredictorEKF::predict(
 
         pitch_k = pitch_k + K * e_k;
     }
+*/
+    int k = 1;
+    for (; k <= max_epochs; k++) {
+        f_tk = 1 / k_1 * std::log(k_1 * receive_data.shoot_speed * T_k + 1) - world_points(0, 0);
+        f_tk_ = receive_data.shoot_speed / (k_1 * receive_data.shoot_speed * T_k + 1);
+        T_k = T_k - f_tk / f_tk_;
+        h_k = receive_data.shoot_speed * std::sin(pitch_k) - 9.8 / 2 * T_k * T_k;
+        // 求解 h_r，经过弹丸飞行时间 T_k 后，目标实际高度
+        h_r = world_points(2, 0);
+        // 计算误差
+        e_k = h_r - h_k;
+        if (-e_k < min_ek  && e_k <= 0) {
+            break;
+        }
+
+        pitch_k = pitch_k + K * e_k;
+    }
 
     fmt::print(
-        "最终迭代picth={:.3f}度, 变化={:.3f}\n", pitch_k / M_PI * 180.,
-        (pitch_k - pitch_0) / M_PI * 180.);  // 弧度 转 度
+        "最终迭代picth_k={:.3f}度, e_k={:.3f}, T_k={},shoot={}\n", pitch_k / M_PI * 180.,
+        e_k, T_k,receive_data.shoot_speed);  // 弧度 转 度
 
     //
     double predict_time = shoot_delay_time + T_k;  // 射击延时 + 飞行延时
@@ -174,6 +190,8 @@ bool Modules::PredictorEKF::predict(
     double send_pitch = std::atan2(i_points(2, 0), i_points(0, 0)) / M_PI * 180.;   // 向上为正
     double send_yaw   = -std::atan2(i_points(1, 0), i_points(0, 0)) / M_PI * 180.;  // 向右为正
 
+    send_pitch = (pitch_k)/ M_PI * 180.  - receive_data.pitch;
+    send_yaw += 1.5;
     fmt::print("[send]: yaw={:.3f}, pitch={:.3f}\n", send_yaw, send_pitch);
 
     send_data.send_pitch = send_pitch; 
@@ -193,7 +211,9 @@ Eigen::Vector3d Modules::PredictorEKF::get_camera_points(
     } else {
         cv::solvePnP(small_obj, armour_points, F_MAT, C_MAT, rvec, tvec);
         fmt::print("small armour\n");
+    
     }
+
 
     Eigen::Vector3d camera_points;
 

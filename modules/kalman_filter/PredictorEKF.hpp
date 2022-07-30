@@ -59,7 +59,7 @@ private:
     double K       = 0.05;     // 更新比例
     double min_ek  = 0.01;     //最小误差
     double T_k     = 0;        // 飞行时间
-    int max_epochs = 10;       // 最大迭代轮数
+    int max_epochs = 30;       // 最大迭代轮数
 
     std::vector<cv::Point3d> small_obj, big_obj;  //大小装甲板
 
