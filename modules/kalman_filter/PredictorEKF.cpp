@@ -148,9 +148,11 @@ bool Modules::PredictorEKF::predict(
     }
 */
     int k = 1;
+    double v_x0;
     for (; k <= max_epochs; k++) {
-        f_tk = 1 / k_1 * std::log(k_1 * receive_data.shoot_speed * T_k + 1) - world_points(0, 0);
-        f_tk_ = receive_data.shoot_speed / (k_1 * receive_data.shoot_speed * T_k + 1);
+        v_x0 = receive_data.shoot_speed * std::cos(pitch_k);
+        f_tk = 1 / k_1 * std::log(k_1 * v_x0 * T_k + 1) - world_points(0, 0);
+        f_tk_ = v_x0 / (k_1 * v_x0 * T_k + 1);
         T_k = T_k - f_tk / f_tk_;
         h_k = receive_data.shoot_speed * std::sin(pitch_k) - 9.8 / 2 * T_k * T_k;
         // 求解 h_r，经过弹丸飞行时间 T_k 后，目标实际高度
