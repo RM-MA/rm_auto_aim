@@ -22,6 +22,7 @@ armour:
   small_half_y: 0.027 # 27.5
   big_half_x: 0.115 # 112.5
   big_half_y: 0.029 # 27.5
+k1: 0.04503
 
 # 1280 x 768
 # cameraMatrix: !!opencv-matrix

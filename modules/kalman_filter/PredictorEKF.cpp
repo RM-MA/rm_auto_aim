@@ -27,6 +27,9 @@ Modules::PredictorEKF::PredictorEKF() : ekf()
     fin["armour"]["big_half_x"] >> big_half_x;
     fin["armour"]["big_half_y"] >> big_half_y;
 
+
+    fin["k1"] >> k_1;
+
     /*
     - point 0: [-squareLength / 2, squareLength / 2, 0]
     - point 1: [ squareLength / 2, squareLength / 2, 0]
@@ -87,7 +90,7 @@ bool Modules::PredictorEKF::predict(
 
     // 根据 传来的pitch角度构造 旋转矩阵
     double pitch = receive_data.pitch / 180. * M_PI;
-    fmt::print("[read] pitch={}\n", pitch / M_PI * 180.);
+    fmt::print("[read] pitch={}, shoot_speed={}\n", pitch / M_PI * 180.,receive_data.shoot_speed );
     Eigen::Matrix3d R_WI;
     R_WI = Eigen::AngleAxisd(-pitch, Eigen::Vector3d::UnitY());
 
@@ -127,6 +130,7 @@ bool Modules::PredictorEKF::predict(
 
     double pitch_0 = std::atan2(world_points(2, 0), world_points(0, 0));
     double pitch_k = pitch_0;
+    double T_k     = 0;
 /*
     int k = 1;
     for (; k <= max_epochs; k++) {
@@ -159,7 +163,7 @@ bool Modules::PredictorEKF::predict(
         h_r = world_points(2, 0);
         // 计算误差
         e_k = h_r - h_k;
-        if (-e_k < min_ek  && e_k <= 0) {
+        if ( std::fabs(e_k )< min_ek ) {
             break;
         }
 
@@ -217,9 +221,12 @@ Eigen::Vector3d Modules::PredictorEKF::get_camera_points(
     }
 
 
+
     Eigen::Vector3d camera_points;
 
     cv::cv2eigen(tvec, camera_points);
+
+    // camera_points(1, 0) =   camera_points(1, 0) + 0.07;
 
     return camera_points;
 }
