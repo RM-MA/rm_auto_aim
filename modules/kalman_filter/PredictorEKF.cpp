@@ -28,7 +28,7 @@ Modules::PredictorEKF::PredictorEKF() : ekf()
     fin["armour"]["big_half_y"] >> big_half_y;
 
 
-    fin["k1"] >> k_1;
+    fin["k"] >> k;
 
     /*
     - point 0: [-squareLength / 2, squareLength / 2, 0]
@@ -128,53 +128,66 @@ bool Modules::PredictorEKF::predict(
     double h_k, h_r;
     double e_k;
 
-    double pitch_0 = std::atan2(world_points(2, 0), world_points(0, 0));
-    double pitch_k = pitch_0;
-    double T_k     = 0;
-/*
-    int k = 1;
-    for (; k <= max_epochs; k++) {
-        f_tk = 1 / k_1 * std::log(k_1 * receive_data.shoot_speed * T_k + 1) - smooth_status(0, 0) -
-               smooth_status(3, 0) * T_k;
-        f_tk_ = receive_data.shoot_speed / (k_1 * receive_data.shoot_speed * T_k + 1) -
-                smooth_status(3, 0);
-        T_k = T_k - f_tk / f_tk_;
-        h_k = receive_data.shoot_speed * std::sin(pitch_k) - 9.8 / 2 * T_k * T_k;
-        // 求解 h_r，经过弹丸飞行时间 T_k 后，目标实际高度
-        h_r = smooth_status(2, 0) + smooth_status(5, 0) * T_k;
-        // 计算误差
-        e_k = h_r - h_k;
-        if (std::fabs(e_k) < min_ek) {
+
+    double dist_vertical = world_points(2, 0);
+    double vertical_tmp = dist_vertical;
+    double dist_horizonal = std::sqrt(world_points(0, 0) * world_points(0, 0) + world_points(1, 0) * world_points(1, 0));
+
+    double pitch_0 = std::atan(dist_vertical / dist_horizonal);
+    double pitch_new = pitch_0;
+ 
+    for(int i = 0; i < max_iter; i++)
+    {
+        double x = 0.0;
+        double y = 0.0;
+        double p = std::tan(pitch_new);
+        double v = receive_data.shoot_speed;
+        double u = v / std::sqrt(1 + pow(p, 2));
+        double delta_x = dist_horizonal / R_K_iter;
+
+        for(int j = 0; j < R_K_iter; j++)
+        {
+            double k1_u = -k * u * sqrt(1 + pow(p, 2));
+            double k1_p = - g / pow(u, 2);
+            double k1_u_sum = u + k1_u * (delta_x / 2);
+            double k1_p_sum = p + k1_p * (delta_x / 2);
+
+            double k2_u = -k * k1_u_sum * sqrt(1 + pow(k1_p_sum, 2));
+            double k2_p = - g / pow(k1_u_sum, 2);
+            double k2_u_sum = u + k2_u * (delta_x / 2);
+            double k2_p_sum = p + k2_p * (delta_x / 2);
+
+            double k3_u = -k * k2_u_sum * sqrt(1 + pow(k2_p_sum, 2));
+            double k3_p = - g / pow(k2_u_sum, 2);
+            double k3_u_sum = u + k2_u * (delta_x / 2);
+            double k3_p_sum = p + k2_p * (delta_x / 2);
+
+            double k4_u = -k * k3_u_sum * sqrt(1 + pow(k3_p_sum, 2));
+            double k4_p = - g / pow(k3_u_sum, 2);
+
+            u += (delta_x / 6) * (k1_u + k2_u + k3_u + k4_u);
+            p += (delta_x / 6) * (k1_p + k2_p + k3_p + k4_p);
+
+            x += delta_x;
+            y+= p * delta_x;
+        }
+        double error = dist_vertical - y;
+        if(fabs(error) < stop_error)
+        {
             break;
+        }else{
+            vertical_tmp += error;
+            pitch_new = atan(vertical_tmp / dist_horizonal);
         }
 
-        pitch_k = pitch_k + K * e_k;
     }
-*/
-    int k = 1;
-    double v_x0;
-    for (; k <= max_epochs; k++) {
-        v_x0 = receive_data.shoot_speed * std::cos(pitch_k);
-        f_tk = 1 / k_1 * std::log(k_1 * v_x0 * T_k + 1) - world_points(0, 0);
-        f_tk_ = v_x0 / (k_1 * v_x0 * T_k + 1);
-        T_k = T_k - f_tk / f_tk_;
-        h_k = receive_data.shoot_speed * std::sin(pitch_k) - 9.8 / 2 * T_k * T_k;
-        // 求解 h_r，经过弹丸飞行时间 T_k 后，目标实际高度
-        h_r = world_points(2, 0);
-        // 计算误差
-        e_k = h_r - h_k;
-        if ( std::fabs(e_k )< min_ek ) {
-            break;
-        }
 
-        pitch_k = pitch_k + K * e_k;
-    }
 
     fmt::print(
-        "最终迭代picth_k={:.3f}度, e_k={:.3f}, T_k={},shoot={}\n", pitch_k / M_PI * 180.,
-        e_k, T_k,receive_data.shoot_speed);  // 弧度 转 度
+        "最终迭代picth_k={:.3f}度,shoot={}\n", pitch_new / M_PI * 180., receive_data.shoot_speed);  // 弧度 转 度
 
     //
+    /*
     double predict_time = shoot_delay_time + T_k;  // 射击延时 + 飞行延时
 
     Eigen::Vector3d predict_world_points = smooth_status.topRows<3>();
@@ -191,13 +204,14 @@ bool Modules::PredictorEKF::predict(
 
     // 将预测的装甲板中心点的世界坐标，投影到图像中，并绘制出来
     re_project_point(showimg, predict_world_points, R_WI.transpose(), cv::Scalar(255, 0, 0));
+    */
 
     // 求解发送的yaw和pitch角度, 单位: 度
     double send_pitch = std::atan2(i_points(2, 0), i_points(0, 0)) / M_PI * 180.;   // 向上为正
     double send_yaw   = -std::atan2(i_points(1, 0), i_points(0, 0)) / M_PI * 180.;  // 向右为正
 
-    send_pitch = (pitch_k)/ M_PI * 180.  - receive_data.pitch;
-    send_yaw += 1.5;
+    send_pitch = (pitch_new)/ M_PI * 180.  - receive_data.pitch;
+    // send_yaw += 1.5;
     fmt::print("[send]: yaw={:.3f}, pitch={:.3f}\n", send_yaw, send_pitch);
 
     send_data.send_pitch = send_pitch; 

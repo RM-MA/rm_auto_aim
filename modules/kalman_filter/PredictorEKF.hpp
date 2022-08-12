@@ -55,11 +55,12 @@ private:
     Measure measure;      // h(x)
     double last_time = 0;
     // 弹道模型
-    double k_1 ;  // 空气阻力系数     = 0.01903
-    double K       = 0.05;     // 更新比例
-    double min_ek  = 0.001;     //最小误差
-    //double T_k     = 0;        // 飞行时间
-    int max_epochs = 30;       // 最大迭代轮数
+    double k ;  // 空气阻力系数     = 0.01903
+    const double g = 9.8;
+
+    int max_iter = 10;       // 最大迭代轮数
+    int R_K_iter = 60;
+    double stop_error = 0.001;
 
     std::vector<cv::Point3d> small_obj, big_obj;  //大小装甲板
 
