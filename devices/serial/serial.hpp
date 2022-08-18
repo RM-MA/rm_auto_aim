@@ -1,8 +1,6 @@
 #ifndef _SERIAL_HPP_
 #define _SERIAL_HPP_
 
-#include "../utils/robot.hpp"
-
 #include <fmt/core.h>
 #include <opencv2/core/hal/interface.h>
 
@@ -11,10 +9,43 @@
 #include <mutex>
 #include <thread>
 
-
 namespace Devices
 {
 const int BufferMaxSize = 50;
+
+struct SendData
+{
+    float send_yaw;
+    float send_pitch;
+    std::uint8_t goal;
+
+    SendData()
+    {
+        send_pitch = send_pitch = 0;
+        goal                    = 0;
+    };
+
+    SendData(double yaw, double pitch)
+    {
+        send_yaw   = yaw;
+        send_pitch = pitch;
+        goal       = 1;
+    }
+};
+
+struct ReceiveData
+{
+    float yaw;
+    float pitch;
+    float shoot_speed;
+
+    ReceiveData() = default;
+
+    ReceiveData(float yaw, float pitch, float shoot_speed)
+    : yaw(yaw), pitch(pitch), shoot_speed(shoot_speed)
+    {
+    }
+};
 
 union float_uchar {
     float f;
@@ -24,11 +55,7 @@ union float_uchar {
 class Serial
 {
 public:
-    explicit Serial(const std::string &, std::mutex& );
-
-    bool sendData(float, float);
-
-    bool sendData(Robot::RobotType, float, float);
+    explicit Serial(const std::string &, std::mutex &);
 
     bool noArmour();
 
@@ -42,12 +69,9 @@ public:
 
     bool readSerial();
 
-    float yaw();
-    float pitch();
+    bool sendData(SendData &);
 
-    bool sendData(Robot::sendData& );
-
-    Robot::receiveData getData();
+    ReceiveData getData();
 
     Serial(Serial const &) = delete;
     Serial & operator=(Serial const &) = delete;
@@ -56,14 +80,22 @@ private:
     uchar send_buffer_[BufferMaxSize];
     uchar read_buffer_[BufferMaxSize];
 
-    float_uchar _yaw, _pitch, _shoot_speed;
+    uchar frame_header, frame_tail;
+    uchar loss;
+
+    float_uchar send_yaw, send_pitch;
+    float_uchar shoot_speed, read_yaw, read_pitch;
 
     std::string name;
-    std::mutex& serial_mutex;
+    std::mutex & serial_mutex;
+    std::mutex data_mutex;
 
-    int fd;  //串口句柄
+    float last_shoot_speed = 15;
+    float updateShootSpeed(float);
 
-    uchar frame_header, frame_tail;
+    int fd;             //串口句柄
+    fd_set fds;         //句柄集合
+    struct timeval tv;  //时间
 };
 
 }  // namespace Devices

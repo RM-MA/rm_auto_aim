@@ -25,7 +25,7 @@ TabWidth:        4
 ObjCBlockIndentWidth: 4
 IndentWidth:     4
 
-AllowShortBlocksOnASingleLine: Never
+# AllowShortBlocksOnASingleLine: Never
 
 AllowShortFunctionsOnASingleLine: None
 

@@ -24,30 +24,8 @@ enum class RobotType {
     Sentry,      //哨兵
 };
 
-struct receiveData
-{
-    float yaw, pitch;
-    float shoot_speed;
 
-    receiveData() = default;
-    receiveData(float yaw, float pitch, float shoot_speed)
-    : yaw(yaw), pitch(pitch), shoot_speed(shoot_speed)
-    {
-    }
-};
 
-struct sendData
-{
-    float yaw, pitch;
-    uint8_t goal;
-    sendData() = default;
-    sendData(uint8_t goal) : yaw(0), pitch(0), goal(goal)
-    {
-    }
-    sendData(double yaw, double pitch, uint8_t goal = 1) : yaw(yaw), pitch(pitch), goal(goal)
-    {
-    }
-};
 
 enum class ArmourType { Small, Big };
 
@@ -112,21 +90,27 @@ struct Armour
         center = (left_light.center + right_light.center) / 2;
     }
 
-    Light left_light, right_light;  //左右灯条
-    cv::Point2f center;             //中心点
-    RobotType type;                 //机器人类型
-    ArmourType armour_type;         //装甲板类型
-    cv::Point3d camera_points;      //Camera Points, 相机坐标系
-    cv::Point3d world_points;       //World Points, 世界坐标系
-    Color color;                    //装甲板颜色
+    Light left_light, right_light;  // 左右灯条
+    cv::Point2f center;             // 中心点
+    RobotType type;                 // 机器人类型
+    ArmourType armour_type;         // 装甲板类型
+    cv::Point3d camera_points;      // Camera Points, 相机坐标系
+    cv::Point3d world_points;       // World Points, 世界坐标系
+    Color color;                    // 装甲板颜色
+
+    inline std::vector<cv::Point2f> get_points()
+    {
+        return std::vector<cv::Point2f>{
+            left_light.top, right_light.top, right_light.bottom, left_light.bottom};
+    }
 };
 
 struct Detection_pack  //每帧的打包数据结构
 {
     cv::Mat img;       //图像
     double timestamp;  //时间戳
-    // cv::Point2f * pts; //
     std::vector<Armour> armours;  //装甲板
+
     Detection_pack() = default;
     Detection_pack(cv::Mat & img, double timestamp) : img(img), timestamp(timestamp)
     {

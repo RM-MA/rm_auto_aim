@@ -21,7 +21,7 @@ public:
 class MV_Camera
 {
 public:
-    explicit MV_Camera(const char *camera_cfg = PROJECT_DIR"/configs/camera/MV-SUA133GC-T_042003320218.Config");
+    explicit MV_Camera(const char *camera_cfg = PROJECT_DIR"/Configs/camera/MV-SUA133GC-T-Manifold.config");
 
     bool open();
 

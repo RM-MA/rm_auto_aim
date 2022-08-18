@@ -4,7 +4,7 @@ project(ma)
 set(CMAKE_CXX_STANDAND 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast -pthread" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast -pthread -Wl,--no-as-needed" )
 
 
 find_package(OpenCV REQUIRED)
@@ -13,8 +13,8 @@ find_package(Eigen3 REQUIRED)
 
 
 message("init----------------------------")
-message("Eigen: Version=${Eigen3_VERSION}")
-message("OpenCV: Version=${OpenCV_VERSION}")
+message("Eigen: Version=${Eigen3_VERSION}, ${EIGEN3_INCLUDE_DIRS}")
+message("OpenCV: Version=${OpenCV_VERSION}, ${OpenCV_INCLUDE_DIRS}")
 message("${PROJECT_SOURCE_DIR}")
 message("end-----------------------------")
 

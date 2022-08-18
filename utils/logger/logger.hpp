@@ -1,7 +1,6 @@
 #ifndef _LOGGER_HPP_
 #define _LOGGER_HPP_
 
-#include <bits/types/struct_timeval.h>
 #include <fmt/color.h>
 #include <fmt/core.h>
 #include <fmt/os.h>

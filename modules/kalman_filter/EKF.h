@@ -110,8 +110,9 @@ public:
     MatrixXX F;  // 预测雅克比
     MatrixZX H;  // 观测雅克比
     MatrixXX P;  // 状态协方差
-    MatrixXX Q;  // 预测过程协方差, w_k, 没更新
-    MatrixZZ R;  // 观测过程协方差, v_k, 没更新
+
+    MatrixXX Q;  // 预测过程协方差
+    MatrixZZ R;  // 观测过程协方差
     MatrixXZ K;  // 卡尔曼增益
     VectorZ Zp;  // 预测观测量
 };
