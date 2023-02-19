@@ -40,7 +40,6 @@ int main(int argc, char ** argv)
     utils::timer timer{"main", 10};
 
     Modules::Detect detector{color};
-    // Modules::Posture_Calculating solver{};
     Modules::PredictorEKF predictor{};
 
     Devices::Serial serial{"/dev/ttyTHS2", serial_mutex};
