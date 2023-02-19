@@ -1,3 +1,12 @@
+# 环境
+
+1. OpenCV
+2. fmt  (格式化字符串) [fmt](https://fmt.dev/latest/index.html)
+3. Eigen3 (矩阵) 
+4. ceres (优化库，安装较麻烦，会遇到BUG)
+5. MVSDK (相机驱动)
+
+
 打算按模块编程和使用多线程
 ```bash
 ├── CMakeLists.txt
