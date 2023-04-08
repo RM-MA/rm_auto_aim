@@ -13,6 +13,9 @@
 #include <fmt/color.h>
 #include <sys/types.h>
 
+
+#include "../devices/serial/serial.hpp"
+
 namespace Robot
 {
 enum class RobotType {
@@ -143,6 +146,38 @@ inline bool drawArmours(const std::vector<Armour> & armours, cv::Mat & drawImg, 
     }
     return true;
 }
+
+
+inline bool drawFPS(
+    cv::Mat & image, double fps, const std::string & model_name = "",
+    const cv::Point & point = cv::Point2f(0, 40), int fontsize = 1,
+    const cv::Scalar & color = cv::Scalar(255, 255, 255))
+{
+    auto str = fmt::format("{:<8}FPS={:.1f}", model_name, fps);
+    cv::putText(image, str, point, cv::FONT_HERSHEY_SIMPLEX, fontsize, color);
+    return true;
+}
+
+inline bool drawSerial(
+    cv::Mat & image, Devices::ReceiveData & data, const cv::Point2f & point = cv::Point2f(0, 40),
+    int fontsize = 1, const cv::Scalar & color = cv::Scalar(255, 255, 255))
+{
+    std::string s_str = fmt::format("shoot={:2.2f}m/s", data.shoot_speed);
+    std::string ea_str = fmt::format("yaw={:3.2f}C, pitch={:3.2f}C", data.yaw, data.pitch);
+    cv::putText(image, ea_str, point, fontsize, cv::FONT_HERSHEY_PLAIN, color);
+    cv::putText(image, s_str, point + cv::Point2f(0, 15), fontsize, cv::FONT_HERSHEY_PLAIN, color);
+    return true;
+}
+
+inline bool drawSend(
+    cv::Mat & image, Devices::SendData & data, const cv::Point2f & point = cv::Point2f(0, 40),
+    int fontsize = 1, const cv::Scalar & color = cv::Scalar(255, 255, 255))
+{
+    std::string ea_str = fmt::format("yaw={:3.2f}C, pitch={:3.2f}C", data.send_yaw, data.send_pitch);
+    cv::putText(image, ea_str, point, fontsize, cv::FONT_HERSHEY_PLAIN, color);
+    return true;
+}
+
 
 }  // namespace Robot
 

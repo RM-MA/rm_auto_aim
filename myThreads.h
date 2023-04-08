@@ -20,7 +20,6 @@
 #include "modules/detect_armour/detect.hpp"
 #include "modules/kalman_filter/PredictorEKF.hpp"
 
-#include "utils/logger/logger.hpp"
 #include "utils/robot.hpp"
 #include "utils/timer/timer.hpp"
 

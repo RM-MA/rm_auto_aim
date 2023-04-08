@@ -5,7 +5,6 @@
 #include "modules/detect_armour/detect.hpp"
 #include "modules/kalman_filter/PredictorEKF.hpp"
 
-#include "utils/logger/logger.hpp"
 #include "utils/robot.hpp"
 #include "utils/timer/timer.hpp"
 
@@ -34,9 +33,6 @@ int main(int argc, char ** argv)
     }
 
     // 模块初始化
-    logger::logger my_logger{
-        "i={}, j={},{:.3f}\n",        logger::LOGGER_TYPE::ALL, PROJECT_DIR "/test.csv", true, "",
-        O_WRONLY | O_CREAT | O_APPEND};
     utils::timer timer{"main", 10};
 
     Modules::Detect detector{color};
@@ -100,9 +96,14 @@ int main(int argc, char ** argv)
         predictor.predict(detection_pack, receive_data, send_data, showimg);
 
         std::thread sendSerialThread{sendSerial_thread, std::ref(serial), std::ref(send_data)};
-        sendSerialThread.detach();
+        sendSerialThread.join();
         // draw
+
         Robot::drawArmours(detection_pack.armours, showimg, color);
+        Robot::drawFPS(showimg, 1000. / main_thread_time, "Main", cv::Point2f(5, 80));
+        Robot::drawSerial(showimg, receive_data, cv::Point2f(1000, 20));
+        Robot::drawSend(showimg, send_data, cv::Point2f(1000, 80));
+
 
         // timer.start(0);
         cv::imshow("after_draw", showimg);
@@ -111,7 +112,6 @@ int main(int argc, char ** argv)
         // timer.end(0, "imshow");
     }
 
-    my_logger.close();
 
     fmt::print(fg(fmt::color::red), "end! wait for 5s\n");
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));

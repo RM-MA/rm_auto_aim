@@ -9,11 +9,13 @@ Modules::PredictorEKF::PredictorEKF() : ekf()
 
     fin["cameraMatrix"] >> F_MAT;  //相机内参
     fin["distCoeffs"] >> C_MAT;    //相机畸变
-    fin["Tcb"] >> R_CI_MAT;        //陀螺仪坐标系到相机坐标系的旋转矩阵
+    fin["R_C2G"] >> R_C2G_MAT;     //相机坐标系 到 云台坐标系 的旋转矩阵
+
+    // p_g = R_C2G * p_c
 
     std::cout << "内参=" << F_MAT << ",\n 畸变=" << C_MAT << std::endl;
 
-    cv::cv2eigen(R_CI_MAT, R_CI);
+    cv::cv2eigen(R_C2G_MAT, R_C2G);
     cv::cv2eigen(F_MAT, F);
     cv::cv2eigen(C_MAT, C);
     // std::cout << C<< std::endl;
@@ -27,9 +29,11 @@ Modules::PredictorEKF::PredictorEKF() : ekf()
     fin["armour"]["big_half_x"] >> big_half_x;
     fin["armour"]["big_half_y"] >> big_half_y;
 
-
+        // 空气阻力系数
     fin["k"] >> k;
-
+    // 静态角度补偿
+    fin["static_yaw"] >> static_yaw;
+    fin["static_pitch"] >> static_pitch;
     /*
     - point 0: [-squareLength / 2, squareLength / 2, 0]
     - point 1: [ squareLength / 2, squareLength / 2, 0]
@@ -61,6 +65,8 @@ bool Modules::PredictorEKF::predict(
     if (armours.empty()) {  //.size() == 0, 会报错
         return false;
     }
+
+    // 选择策略
     // auto & armours = detection_pack.armours;
     //对装甲板进行排序, 优先大装甲板, 其次选最大的
     std::sort(
@@ -89,15 +95,17 @@ bool Modules::PredictorEKF::predict(
     auto pts           = select_armour.get_points();  //装甲板的四点，用来测距
 
     // 根据 传来的pitch角度构造 旋转矩阵
-    double pitch = receive_data.pitch / 180. * M_PI;
-    fmt::print("[read] pitch={}, shoot_speed={}\n", pitch / M_PI * 180.,receive_data.shoot_speed );
-    Eigen::Matrix3d R_WI;
-    R_WI = Eigen::AngleAxisd(-pitch, Eigen::Vector3d::UnitY());
+    double pitch_radian = receive_data.pitch / 180. * M_PI;
+    // fmt::print("[read] pitch_angle={}, yaw_angle={},shoot_speed={}\n", receive_data.pitch, receive_data.yaw,receive_data.shoot_speed );
 
-    // 得到3个坐标系下的坐标
+    Eigen::Matrix3d R_G2W = PredictorEKF::get_R_G2W(receive_data);
+
+    // 得到3个坐标系下的坐标,
     Eigen::Vector3d camera_points = get_camera_points(pts, select_armour.armour_type);
-    Eigen::Vector3d i_points      = R_CI.transpose() * camera_points;
-    Eigen::Vector3d world_points  = pc2pw(camera_points, R_WI.transpose());
+    Eigen::Vector3d gimbal_points = R_C2G.transpose() * camera_points;
+    Eigen::Vector3d world_points  = pc2pw(camera_points, R_G2W.transpose());
+
+
     // 相机坐标系，
     // x轴向右，y轴向下，z轴延相机向前方
     fmt::print(
@@ -105,118 +113,64 @@ bool Modules::PredictorEKF::predict(
         camera_points(2, 0));
     //x轴延枪管向前，y轴向左，z轴向上
     fmt::print(
-        "[{:<6}]: {:.3f},{:.3f},{:.3f}\n", i_fmt, i_points(0, 0), i_points(1, 0), i_points(2, 0));
+        "[{:<6}]: {:.3f},{:.3f},{:.3f}\n", gimbal_fmt, gimbal_points(0, 0), gimbal_points(1, 0),
+        gimbal_points(2, 0));
     //xy平面平行于地面，z轴垂直地面
     //x轴延枪管向前，y轴向左，z轴向上
     fmt::print(
         "[{:<6}]: {:.3f},{:.3f},{:.3f}\n", world_fmt, world_points(0, 0), world_points(1, 0),
         world_points(2, 0));
 
-    // 更新时间
-    predictfunc.delta_t = timestamp - last_time;
-    last_time           = timestamp;
-    // fmt::print("delay_time = {}s\n", predictfunc.delta_t);
 
-    // ekf滤波出来，三维坐标和速度
-    ekf.predict(predictfunc);
-    // x,y,z ,v_x, v_y, v_z
-    VectorX smooth_status = ekf.update(measure, world_points);
+    // show posistion, 在图片上画 三个坐标系的坐标
+    std::string camera_position_fmt = fmt::format("[camera]: x={:.3f},y={:.3f},z={:.3f}", camera_points(0, 0), camera_points(1, 0),
+        camera_points(2, 0));
+    std::string gimbal_positino_fmt = fmt::format("[gimbal]: x={:.3f}, y={:.3f}, z={:.3f}", gimbal_points(0, 0),
+        gimbal_points(1, 0), gimbal_points(2, 0));
+    std::string world_position_fmt = fmt::format("[world]: x={:.3f},y={:.3f},z={:.3f}", world_points(0, 0), world_points(1, 0),
+        world_points(2, 0));
 
-    // 根据弹道模型求出 pitch角度 和 飞行时间
-    // double T_k;  // 飞行时间
-    double f_tk, f_tk_;
-    double h_k, h_r;
-    double e_k;
+    cv::putText(showimg,world_position_fmt, select_armour.left_light.bottom - cv::Point2f(0, -30), 1, cv::FONT_HERSHEY_PLAIN, cv::Scalar(0, 0, 255));
+    cv::putText(showimg,gimbal_positino_fmt, select_armour.left_light.bottom - cv::Point2f(0, -60), 1, cv::FONT_HERSHEY_PLAIN, cv::Scalar(0, 0, 255));
+    cv::putText(showimg,camera_position_fmt, select_armour.left_light.bottom - cv::Point2f(0, -90), 1, cv::FONT_HERSHEY_PLAIN, cv::Scalar(0, 255, 255));
+    // ----------------- 卡尔曼滤波的使用 ------------------------
 
+    // // 更新时间
+    // predictfunc.delta_t = timestamp - last_time;
+    // last_time           = timestamp;
+    // // fmt::print("delay_time = {}s\n", predictfunc.delta_t);
 
-    double dist_vertical = world_points(2, 0);
-    double vertical_tmp = dist_vertical;
-    double dist_horizonal = std::sqrt(world_points(0, 0) * world_points(0, 0) + world_points(1, 0) * world_points(1, 0));
+    // // ekf滤波出来，三维坐标和速度
+    // ekf.predict(predictfunc);
+    // // x,y,z ,v_x, v_y, v_z
+    // VectorX smooth_status = ekf.update(measure, world_points);
+    // ----------------------------------------------------------
 
-    double pitch_0 = std::atan(dist_vertical / dist_horizonal);
-    double pitch_new = pitch_0;
- 
-    for(int i = 0; i < max_iter; i++)
-    {
-        double x = 0.0;
-        double y = 0.0;
-        double p = std::tan(pitch_new);
-        double v = receive_data.shoot_speed;
-        double u = v / std::sqrt(1 + pow(p, 2));
-        double delta_x = dist_horizonal / R_K_iter;
+    double send_yaw =
+        -std::atan2(gimbal_points(1, 0), gimbal_points(0, 0)) / M_PI * 180.;  // 向右为正
 
-        for(int j = 0; j < R_K_iter; j++)
-        {
-            double k1_u = -k * u * sqrt(1 + pow(p, 2));
-            double k1_p = - g / pow(u, 2);
-            double k1_u_sum = u + k1_u * (delta_x / 2);
-            double k1_p_sum = p + k1_p * (delta_x / 2);
+    float pitch_solve = std::atan2(gimbal_points(2, 0), gimbal_points(0, 0)) / M_PI * 180.;
+    // 解算弹道模型
+    if (solve_ballistic_model(world_points, receive_data, pitch_solve)) {
+        fmt::print(
+            "最终迭代picth_k={:.3f}度, shoot={}\n", pitch_solve / M_PI * 180.,
+            receive_data.shoot_speed);  // 弧度 转 度
 
-            double k2_u = -k * k1_u_sum * sqrt(1 + pow(k1_p_sum, 2));
-            double k2_p = - g / pow(k1_u_sum, 2);
-            double k2_u_sum = u + k2_u * (delta_x / 2);
-            double k2_p_sum = p + k2_p * (delta_x / 2);
+        fmt::print("[send]: yaw={:.3f}, pitch={:.3f}\n", send_yaw, pitch_solve);
 
-            double k3_u = -k * k2_u_sum * sqrt(1 + pow(k2_p_sum, 2));
-            double k3_p = - g / pow(k2_u_sum, 2);
-            double k3_u_sum = u + k2_u * (delta_x / 2);
-            double k3_p_sum = p + k2_p * (delta_x / 2);
+        send_data.send_pitch = pitch_solve + static_pitch;
+        send_data.send_yaw   = send_yaw + static_yaw;
+        send_data.goal       = 1;
 
-            double k4_u = -k * k3_u_sum * sqrt(1 + pow(k3_p_sum, 2));
-            double k4_p = - g / pow(k3_u_sum, 2);
+    } else {
+        fmt::print(
+            fg(fmt::color::red) | fmt::emphasis::bold, "最终迭代picth_k={:.3f}度, shoot={}\n",
+            pitch_solve / M_PI * 180., receive_data.shoot_speed);
 
-            u += (delta_x / 6) * (k1_u + k2_u + k3_u + k4_u);
-            p += (delta_x / 6) * (k1_p + k2_p + k3_p + k4_p);
+        send_data.goal       = 0;
 
-            x += delta_x;
-            y+= p * delta_x;
-        }
-        double error = dist_vertical - y;
-        if(fabs(error) < stop_error)
-        {
-            break;
-        }else{
-            vertical_tmp += error;
-            pitch_new = atan(vertical_tmp / dist_horizonal);
-        }
-
+        return false;
     }
-
-
-    fmt::print(
-        "最终迭代picth_k={:.3f}度,shoot={}\n", pitch_new / M_PI * 180., receive_data.shoot_speed);  // 弧度 转 度
-
-    //
-    /*
-    double predict_time = shoot_delay_time + T_k;  // 射击延时 + 飞行延时
-
-    Eigen::Vector3d predict_world_points = smooth_status.topRows<3>();
-    predict_world_points(0, 0) += smooth_status(3, 0) * predict_time;
-    predict_world_points(1, 0) += smooth_status(4, 0) * predict_time;
-    predict_world_points(2, 0) += smooth_status(5, 0) * predict_time;
-
-    fmt::print(
-        "[{}滤波]: cx={:.3f}, cy={:.3f}, cz={:.3f}\n", predict_fmt, smooth_status(0, 0),
-        smooth_status(1, 0), smooth_status(2, 0));
-    fmt::print(
-        "[{}滤波]: vx={:.3f}, vy={:.3f}, vz={:.3f}\n", predict_fmt, smooth_status(3, 0),
-        smooth_status(4, 0), smooth_status(5, 0));
-
-    // 将预测的装甲板中心点的世界坐标，投影到图像中，并绘制出来
-    re_project_point(showimg, predict_world_points, R_WI.transpose(), cv::Scalar(255, 0, 0));
-    */
-
-    // 求解发送的yaw和pitch角度, 单位: 度
-    double send_pitch = std::atan2(i_points(2, 0), i_points(0, 0)) / M_PI * 180.;   // 向上为正
-    double send_yaw   = -std::atan2(i_points(1, 0), i_points(0, 0)) / M_PI * 180.;  // 向右为正
-
-    send_pitch = (pitch_new)/ M_PI * 180.  - receive_data.pitch;
-    // send_yaw += 1.5;
-    fmt::print("[send]: yaw={:.3f}, pitch={:.3f}\n", send_yaw, send_pitch);
-
-    send_data.send_pitch = send_pitch; 
-    send_data.send_yaw   = send_yaw;
-    send_data.goal       = 1;
 
     return true;
 }
@@ -231,10 +185,7 @@ Eigen::Vector3d Modules::PredictorEKF::get_camera_points(
     } else {
         cv::solvePnP(small_obj, armour_points, F_MAT, C_MAT, rvec, tvec);
         fmt::print("small armour\n");
-    
     }
-
-
 
     Eigen::Vector3d camera_points;
 
@@ -243,4 +194,79 @@ Eigen::Vector3d Modules::PredictorEKF::get_camera_points(
     // camera_points(1, 0) =   camera_points(1, 0) + 0.07;
 
     return camera_points;
+}
+
+// 解算弹道模型
+bool Modules::PredictorEKF::solve_ballistic_model(
+    const Eigen::Vector3d & world_points, const Devices::ReceiveData & receive_data,
+    float & pitch_res)
+{
+    // 根据弹道模型求出 pitch角度 和 飞行时间
+    // double T_k;  // 飞行时间
+    double f_tk, f_tk_;
+    double h_k, h_r;
+    double e_k;
+
+    // 竖直- Z轴
+    double dist_vertical = world_points(2, 0);
+    double vertical_tmp  = dist_vertical;
+
+    // 水平- X轴+Y轴
+    double dist_horizonal = std::sqrt(
+        world_points(0, 0) * world_points(0, 0) + world_points(1, 0) * world_points(1, 0));
+
+    double pitch_0     = std::atan(dist_vertical / dist_horizonal);
+    double pitch_solve = pitch_0;
+
+    for (int i = 0; i < max_iter; i++) {
+        double x       = 0.0;
+        double y       = 0.0;
+        double p       = std::tan(pitch_solve);
+        double v       = receive_data.shoot_speed;
+        double u       = v / std::sqrt(1 + pow(p, 2));
+        double delta_x = dist_horizonal / R_K_iter;
+
+        for (int j = 0; j < R_K_iter; j++) {
+            double k1_u     = -k * u * sqrt(1 + pow(p, 2));
+            double k1_p     = -g / pow(u, 2);
+            double k1_u_sum = u + k1_u * (delta_x / 2);
+            double k1_p_sum = p + k1_p * (delta_x / 2);
+
+            double k2_u     = -k * k1_u_sum * sqrt(1 + pow(k1_p_sum, 2));
+            double k2_p     = -g / pow(k1_u_sum, 2);
+            double k2_u_sum = u + k2_u * (delta_x / 2);
+            double k2_p_sum = p + k2_p * (delta_x / 2);
+
+            double k3_u     = -k * k2_u_sum * sqrt(1 + pow(k2_p_sum, 2));
+            double k3_p     = -g / pow(k2_u_sum, 2);
+            double k3_u_sum = u + k2_u * (delta_x / 2);
+            double k3_p_sum = p + k2_p * (delta_x / 2);
+
+            double k4_u = -k * k3_u_sum * sqrt(1 + pow(k3_p_sum, 2));
+            double k4_p = -g / pow(k3_u_sum, 2);
+
+            u += (delta_x / 6) * (k1_u + k2_u + k3_u + k4_u);
+            p += (delta_x / 6) * (k1_p + k2_p + k3_p + k4_p);
+
+            x += delta_x;
+            y += p * delta_x;
+        }
+        double error = dist_vertical - y;
+        if (fabs(error) < stop_error) {
+            break;
+        } else {
+            vertical_tmp += error;
+            pitch_solve = atan(vertical_tmp / dist_horizonal);  // 弧度
+
+            // 避免pitch太大
+        }
+    }
+
+    if (std::fabs(pitch_solve) > M_PI) {
+        return false;
+    }
+
+    pitch_res = pitch_solve;
+
+    return true;
 }
