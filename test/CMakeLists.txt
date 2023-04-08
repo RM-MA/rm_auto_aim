@@ -65,3 +65,5 @@ add_executable(serial_test serial_test.cpp)
 # ${OpenCV_LIBS}
 # ${CERES_LIBRARIES}
 # )
+
+add_executable(eigen_test eigen_test.cpp)
