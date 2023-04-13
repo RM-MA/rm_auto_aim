@@ -4,7 +4,7 @@ project(ma)
 set(CMAKE_CXX_STANDAND 17)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast -pthread -Wl,--no-as-needed" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g  -pthread -Wl,--no-as-needed" )
 
 
 find_package(OpenCV REQUIRED)

@@ -100,6 +100,10 @@ struct Armour
     cv::Point3d camera_points;      // Camera Points, 相机坐标系
     cv::Point3d world_points;       // World Points, 世界坐标系
     Color color;                    // 装甲板颜色
+    cv::Mat number_img;
+    float confidence;
+    char number;
+    std::string classfication_result;
 
     inline std::vector<cv::Point2f> get_points()
     {

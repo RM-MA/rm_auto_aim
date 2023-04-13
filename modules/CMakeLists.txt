@@ -9,10 +9,11 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 aux_source_directory(kalman_filter kalman_src)
 aux_source_directory(detect_armour detect_src)
+aux_source_directory(number_classifier number_classifier_src)
 # aux_source_directory(posture_calculating posture_calculating_src)
 
 message("${kalman_src}")
-add_library(modules SHARED ${kalman_src} ${detect_src})
+add_library(modules SHARED ${kalman_src} ${detect_src} ${number_classifier_src})
 
 target_link_libraries(modules
     ${OpenCV_LIBS}

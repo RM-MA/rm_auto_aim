@@ -102,8 +102,8 @@ bool Modules::PredictorEKF::predict(
 
     // 得到3个坐标系下的坐标,
     Eigen::Vector3d camera_points = get_camera_points(pts, select_armour.armour_type);
-    Eigen::Vector3d gimbal_points = R_C2G.transpose() * camera_points;
-    Eigen::Vector3d world_points  = pc2pw(camera_points, R_G2W.transpose());
+    Eigen::Vector3d gimbal_points = R_C2G * camera_points;
+    Eigen::Vector3d world_points  = R_G2W * gimbal_points;
 
 
     // 相机坐标系，
